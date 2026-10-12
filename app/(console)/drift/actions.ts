@@ -3,8 +3,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/src/auth/access";
-import { createIssue, findOpenIssue } from "@/src/agent/github";
-import { buildPinTask, bumpSize, issueTitle, validRepo } from "@/src/agent/task";
+import { createCareHubTicket, careHubConfigured } from "@/src/agent/carehub";
+import { dispatchPin } from "@/src/agent/dispatch";
+import { commentOnIssue, createIssue, findOpenIssue } from "@/src/agent/github";
+import { readRepoPin } from "@/src/agent/repo";
+import { bumpSize, validRepo } from "@/src/agent/task";
 import { loadObserved, loadRegistry, recordAgentRun } from "@/src/registry/db";
 import { pinFinding } from "@/src/registry/drift";
 
@@ -27,27 +30,25 @@ export async function fixWithAgent(f: FormData) {
       .filter((p) => p.package === pkg && live.has(p.projectSlug) && bumpSize(p.version, snap.latest!))
       .map((p) => ({ slug: p.projectSlug, environment: p.environment, version: p.version }));
     const host = (await headers()).get("host");
-    const task = buildPinTask({
-      repo: proj.repo, path: proj.path, project, environment, pkg, declared: pin.version, latest: snap.latest,
-      observedAt: observed.run?.finishedAt ?? null, packageRepo: snap.repo ?? null,
-      origin: host ? `https://${host}` : null, alsoBehind, requestedBy: admin.email,
-    });
 
-    // The duplicate check is a convenience: if it fails, still open the ticket (creating it reports any real access problem).
-    const existing = await findOpenIssue(proj.repo, issueTitle({ pkg, declared: pin.version, latest: snap.latest, project, environment })).catch((e) => {
-      console.error("duplicate check failed, creating the ticket anyway", e);
-      return null;
-    });
-    if (existing) {
-      result = `agentExisting=${encodeURIComponent(existing)}`;
-    } else {
-      const url = await createIssue(task);
-      try {
-        await recordAgentRun({ projectSlug: project, environment, package: pkg, fromVersion: pin.version, toVersion: snap.latest, issueUrl: url, requestedBy: admin.email });
-      } catch (e) {
-        console.error("could not record agent run", e); // the issue exists; losing the marker is not worth failing the request
-      }
-      result = `agent=${encodeURIComponent(url)}`;
+    const outcome = await dispatchPin(
+      {
+        readRepoPin, findOpenIssue, createIssue, commentOnIssue, recordRun: recordAgentRun,
+        createTicket: careHubConfigured() ? (t) => createCareHubTicket(t) : null,
+      },
+      {
+        repo: proj.repo, path: proj.path, project, environment, pkg, declared: pin.version, latest: snap.latest,
+        observedAt: observed.run?.finishedAt ?? null, packageRepo: snap.repo ?? null,
+        origin: host ? `https://${host}` : null, alsoBehind, requestedBy: admin.email,
+      },
+    );
+
+    if (outcome.kind === "refused") result = `agentRefused=${encodeURIComponent(outcome.reason)}`;
+    else if (outcome.kind === "existing") result = `agentExisting=${encodeURIComponent(outcome.issueUrl)}`;
+    else {
+      result = `agent=${encodeURIComponent(outcome.issueUrl)}`;
+      if (outcome.ticket) result += `&agentTicket=${encodeURIComponent(outcome.ticket.number)}`;
+      if (outcome.warnings.length) result += `&agentWarn=${encodeURIComponent(outcome.warnings.join(" "))}`;
     }
   } catch (e) {
     console.error("fix with agent failed", e);

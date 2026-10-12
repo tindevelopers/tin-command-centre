@@ -17,15 +17,22 @@ export async function findOpenIssue(repo: string, title: string, token = process
   return items.find((x) => x.title === title && !x.pull_request)?.html_url ?? null;
 }
 
-/** Opens the work order as a GitHub issue; the Claude workflow in that repo picks up the @claude mention. Returns the issue URL. */
-export async function createIssue(task: AgentTask, token = process.env.AGENT_GITHUB_TOKEN): Promise<string> {
+/** Opens the work order as a GitHub issue; the Claude workflow in that repo picks up the @claude mention. */
+export async function createIssue(task: AgentTask, token = process.env.AGENT_GITHUB_TOKEN): Promise<{ url: string; number: number }> {
   if (!token) throw new Error("AGENT_GITHUB_TOKEN is not set.");
   const post = (labels: string[]) => fetch(`https://api.github.com/repos/${task.repo}/issues`, { method: "POST", headers: headers(token), body: JSON.stringify({ title: task.title, body: task.body, labels }) });
   let res = await post(task.labels);
   // Labels are a convenience. A token without permission to create them gets a 422; the ticket matters more than its labels.
   if (res.status === 422 && task.labels.length) res = await post([]);
   if (!res.ok) throw new Error(`GitHub returned ${res.status} creating the issue in ${task.repo}.`);
-  const json = (await res.json()) as { html_url?: string };
-  if (!json.html_url) throw new Error("GitHub did not return an issue URL.");
-  return json.html_url;
+  const json = (await res.json()) as { html_url?: string; number?: number };
+  if (!json.html_url || typeof json.number !== "number") throw new Error("GitHub did not return an issue URL.");
+  return { url: json.html_url, number: json.number };
+}
+
+/** A plain comment on an issue (used to mark the work order with its support ticket). */
+export async function commentOnIssue(repo: string, issueNumber: number, body: string, token = process.env.AGENT_GITHUB_TOKEN): Promise<void> {
+  if (!token) throw new Error("AGENT_GITHUB_TOKEN is not set.");
+  const res = await fetch(`https://api.github.com/repos/${repo}/issues/${issueNumber}/comments`, { method: "POST", headers: headers(token), body: JSON.stringify({ body }) });
+  if (!res.ok) throw new Error(`GitHub returned ${res.status} commenting on issue ${issueNumber} in ${repo}.`);
 }

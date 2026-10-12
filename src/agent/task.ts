@@ -1,6 +1,7 @@
 import { compareVersions, parseVersion } from "@/src/registry/drift";
 
 export type AgentTask = { repo: string; title: string; body: string; labels: string[] };
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
 
 export type PinTaskInput = {
   repo: string;
@@ -9,7 +10,10 @@ export type PinTaskInput = {
   project: string;
   environment: string;
   pkg: string;
+  /** The version the registry declares. */
   declared: string;
+  /** The version the repo's package.json actually pins today, when we could read it; null when unverified. */
+  repoVersion: string | null;
   latest: string;
   /** When the collector last observed the package. */
   observedAt: Date | null;
@@ -33,8 +37,14 @@ export function bumpSize(declared: string, latest: string): "major" | "minor" | 
   return d.core[0] < l.core[0] ? "major" : d.core[1] < l.core[1] ? "minor" : "patch";
 }
 
-export const issueTitle = (i: Pick<PinTaskInput, "pkg" | "declared" | "latest" | "project" | "environment">) =>
-  `Upgrade ${i.pkg} ${i.declared} to ${i.latest} (${i.project}, ${i.environment})`;
+/** The version the upgrade starts from: what the repo really has when we know it, else what the registry declares. */
+export const fromVersion = (i: Pick<PinTaskInput, "declared" | "repoVersion">) => i.repoVersion ?? i.declared;
+
+export const issueTitle = (i: Pick<PinTaskInput, "pkg" | "declared" | "repoVersion" | "latest" | "project" | "environment">) =>
+  `Upgrade ${i.pkg} ${fromVersion(i)} to ${i.latest} (${i.project}, ${i.environment})`;
+
+/** A major bump is the risky one, so it is the one that gets the queue's attention first. */
+export const priorityFor = (size: "major" | "minor" | "patch"): TicketPriority => (size === "major" ? "high" : size === "minor" ? "medium" : "low");
 
 /**
  * The work order, written as a ticket: where the code is, the evidence behind it, what to do, and when it is done.
@@ -42,8 +52,9 @@ export const issueTitle = (i: Pick<PinTaskInput, "pkg" | "declared" | "latest" |
  * stays the authority on what should be running.
  */
 export function buildPinTask(i: PinTaskInput): AgentTask {
-  const size = bumpSize(i.declared, i.latest);
-  if (!size) throw new Error(`${i.pkg} ${i.declared} is not behind ${i.latest}.`);
+  const from = fromVersion(i);
+  const size = bumpSize(from, i.latest);
+  if (!size) throw new Error(`${i.pkg} ${from} is not behind ${i.latest}.`);
   const where = i.path
     ? `\`${i.path}\` (from the registry). Update the dependency in \`${i.path}/package.json\`, and in any workspace package that app depends on and that declares it too.`
     : "Not recorded in the registry. Find the app for this project by name under `apps/`, then update the dependency in its `package.json` and in any workspace package it depends on that declares it too.";
@@ -61,7 +72,7 @@ export function buildPinTask(i: PinTaskInput): AgentTask {
     labels: ["agent", "dependencies"],
     title: issueTitle(i),
     body: [
-      `@claude Upgrade \`${i.pkg}\` from \`${i.declared}\` to \`${i.latest}\` for \`${i.project}\` (${i.environment}).`,
+      `@claude Upgrade \`${i.pkg}\` from \`${from}\` to \`${i.latest}\` for \`${i.project}\` (${i.environment}).`,
       "",
       "## Where this lives",
       `- Repository: ${i.repo}`,
@@ -69,6 +80,11 @@ export function buildPinTask(i: PinTaskInput): AgentTask {
       "",
       "## Evidence",
       `- Declared in the TIN ops console (the registry is the source of truth): \`${i.declared}\``,
+      i.repoVersion === null
+        ? "- Could not be checked against the repo before this ticket was raised; confirm the current pin first."
+        : i.repoVersion === i.declared
+          ? `- Checked against the repo: it pins \`${i.repoVersion}\`, matching the registry.`
+          : `- Checked against the repo: it pins \`${i.repoVersion}\`, which differs from the registry. Start from the repo's version; the registry will need correcting too.`,
       `- Latest published: \`${i.latest}\` (${size} bump)${i.observedAt ? `, observed ${i.observedAt.toISOString().slice(0, 16).replace("T", " ")} UTC` : ""}`,
       ...pkgLinks,
       ...links,
@@ -93,3 +109,31 @@ export function buildPinTask(i: PinTaskInput): AgentTask {
     ].join("\n"),
   };
 }
+
+/** The platform support ticket for the same work. It points at the work order; the issue links back through a marker comment. */
+export function buildCareHubTicket(i: PinTaskInput, issueUrl: string): { subject: string; description: string; priority: TicketPriority } {
+  const from = fromVersion(i);
+  const size = bumpSize(from, i.latest);
+  if (!size) throw new Error(`${i.pkg} ${from} is not behind ${i.latest}.`);
+  return {
+    subject: issueTitle(i),
+    priority: priorityFor(size),
+    description: [
+      `${i.project} (${i.environment}) is behind on ${i.pkg}: ${from} now, ${i.latest} latest (${size} bump).`,
+      "",
+      `Work order (the agent runs from this issue): ${issueUrl}`,
+      ...(i.origin ? [`Project in the TIN ops console: ${i.origin}/projects/${i.project}`, `Drift: ${i.origin}/drift?q=${encodeURIComponent(i.pkg)}`] : []),
+      `Repository: ${i.repo}${i.path ? ` (${i.path})` : ""}`,
+      "",
+      "This ticket moves to in progress when the agent opens a draft PR, notes the merge, and resolves itself when the declared pin is updated in the console.",
+      `Requested by ${i.requestedBy}.`,
+    ].join("\n"),
+  };
+}
+
+/**
+ * Posted on the issue after the ticket exists. The hidden marker is how the agent-ticket-sync workflow in the
+ * repo finds the ticket from a PR that references the issue; its pattern must stay in step with that workflow.
+ */
+export const ticketMarkerComment = (t: { id: string; number: string }) =>
+  `Platform support ticket **${t.number}** is the record for this work order.\n\n<!-- care-hub-ticket id=${t.id} number=${t.number} -->`;

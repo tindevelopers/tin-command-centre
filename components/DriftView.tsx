@@ -16,8 +16,8 @@ export default function DriftView({ reg, observed, sp, onFix, agentRuns = [] }: 
   const one = (k: string) => (Array.isArray(sp[k]) ? sp[k][0] : sp[k]) ?? "";
   const f = parseDriftFilters(sp);
   // A hand-off only counts while the pin is still at the version it was raised for; once the pin moves on, the marker goes.
-  const runs: Record<string, string> = {};
-  for (const r of [...agentRuns].reverse()) if (reg.pins.some((p) => p.projectSlug === r.projectSlug && p.environment === r.environment && p.package === r.package && p.version === r.fromVersion)) runs[`${r.projectSlug}|${r.environment}|${r.package}`] = r.issueUrl;
+  const runs: Record<string, { issueUrl: string; ticketRef: string | null }> = {};
+  for (const r of [...agentRuns].reverse()) if (reg.pins.some((p) => p.projectSlug === r.projectSlug && p.environment === r.environment && p.package === r.package && p.version === r.fromVersion)) runs[`${r.projectSlug}|${r.environment}|${r.package}`] = { issueUrl: r.issueUrl, ticketRef: r.ticketRef };
   const findings = computeDrift(reg, observed.packages, observed.cells);
   const age = staleness(observed.run?.finishedAt ?? null, new Date());
 
@@ -47,7 +47,13 @@ export default function DriftView({ reg, observed, sp, onFix, agentRuns = [] }: 
       )}
       {age !== "green" && observed.run && <Notice>The observed data is stale, so the findings below may not reflect reality.</Notice>}
 
-      {/^https:\/\/github\.com\//.test(one("agent")) && <Notice>Agent started: <a className="underline" href={one("agent")}>{one("agent")}</a>. It will open a draft pull request for review.</Notice>}
+      {/^https:\/\/github\.com\//.test(one("agent")) && (
+        <Notice>
+          Agent started{one("agentTicket") ? <> under support ticket <strong>{one("agentTicket")}</strong></> : null}: <a className="underline" href={one("agent")}>{one("agent")}</a>. It will open a draft pull request for review.
+          {one("agentWarn") && <> {one("agentWarn")}</>}
+        </Notice>
+      )}
+      {one("agentRefused") && <Notice>Not sent to the agent. {one("agentRefused")}</Notice>}
       {/^https:\/\/github\.com\//.test(one("agentExisting")) && <Notice>An agent ticket is already open for this upgrade: <a className="underline" href={one("agentExisting")}>{one("agentExisting")}</a>.</Notice>}
       {one("agentError") && <Notice>{one("agentError")}</Notice>}
 

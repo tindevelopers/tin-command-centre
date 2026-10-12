@@ -27,7 +27,7 @@ export function Select({ name, options, defaultValue }: { name: string; options:
   );
 }
 
-export function Findings({ findings, showProject = false, onFix, runs = {} }: { findings: Finding[]; showProject?: boolean; onFix?: (f: FormData) => void | Promise<void>; runs?: Record<string, string> }) {
+export function Findings({ findings, showProject = false, onFix, runs = {} }: { findings: Finding[]; showProject?: boolean; onFix?: (f: FormData) => void | Promise<void>; runs?: Record<string, { issueUrl: string; ticketRef: string | null }> }) {
   return (
     <Table head={[...(showProject ? ["Project"] : []), "Environment", "Check", "What", "Status", ...(onFix ? [""] : [])]}>
       {findings.map((f, i) => (
@@ -40,7 +40,9 @@ export function Findings({ findings, showProject = false, onFix, runs = {} }: { 
           {onFix && (
             <td className={td}>
               {f.kind === "pin" && f.environment && runs[`${f.projectSlug}|${f.environment}|${f.subject}`] ? (
-                <a className="whitespace-nowrap text-xs underline" href={runs[`${f.projectSlug}|${f.environment}|${f.subject}`]}>Agent working: view ticket</a>
+                <a className="whitespace-nowrap text-xs underline" href={runs[`${f.projectSlug}|${f.environment}|${f.subject}`].issueUrl}>
+                  Agent working{runs[`${f.projectSlug}|${f.environment}|${f.subject}`].ticketRef ? `: ${runs[`${f.projectSlug}|${f.environment}|${f.subject}`].ticketRef}` : ": view issue"}
+                </a>
               ) : f.kind === "pin" && f.colour !== "green" && f.environment && (
                 <form action={onFix}>
                   <input type="hidden" name="project" value={f.projectSlug} />

@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createIssue, findOpenIssue } from "./github";
-import { buildPinTask, bumpSize, issueTitle, validRepo } from "./task";
+import { buildCareHubTicket, buildPinTask, bumpSize, issueTitle, priorityFor, ticketMarkerComment, validRepo } from "./task";
 import type { PinTaskInput } from "./task";
 
 const input: PinTaskInput = {
   repo: "tindevelopers/konnect-caas-base", path: "apps/app", project: "konnect-app", environment: "development", pkg: "@tindevelopers/domain-support",
-  declared: "5.1.0", latest: "6.0.0", observedAt: new Date("2026-10-06T07:35:00Z"), packageRepo: "tindevelopers/shared-api-hub",
+  declared: "5.1.0", repoVersion: "5.1.0", latest: "6.0.0", observedAt: new Date("2026-10-06T07:35:00Z"), packageRepo: "tindevelopers/shared-api-hub",
   origin: "https://console.tinconnect.com", alsoBehind: [{ slug: "konnect-app", environment: "development", version: "5.1.0" }, { slug: "konnect-ops", environment: "development", version: "5.1.0" }],
   requestedBy: "a@tin.info",
 };
@@ -38,6 +38,33 @@ describe("agent task", () => {
     expect(t.body).toContain("Do not change those here");
     expect(buildPinTask({ ...input, alsoBehind: [] }).body).toContain("No other project is behind");
   });
+  it("says whether the repo was checked, and starts from the repo's version when it differs from the registry", () => {
+    expect(buildPinTask(input).body).toContain("Checked against the repo: it pins `5.1.0`, matching the registry");
+    const drifted = buildPinTask({ ...input, declared: "5.0.0", repoVersion: "5.1.0" });
+    expect(drifted.body).toContain("which differs from the registry");
+    expect(drifted.title).toBe("Upgrade @tindevelopers/domain-support 5.1.0 to 6.0.0 (konnect-app, development)");
+    expect(drifted.body).toMatch(/^@claude Upgrade `@tindevelopers\/domain-support` from `5.1.0` to `6.0.0`/);
+    expect(buildPinTask({ ...input, repoVersion: null }).body).toContain("Could not be checked against the repo");
+  });
+  it("prioritises a major bump above a minor and a patch", () => {
+    expect([priorityFor("major"), priorityFor("minor"), priorityFor("patch")]).toEqual(["high", "medium", "low"]);
+  });
+  it("writes a ticket that points at the work order and the console", () => {
+    const t = buildCareHubTicket(input, "https://github.com/o/r/issues/5");
+    expect(t.priority).toBe("high");
+    expect(t.subject).toBe(issueTitle(input));
+    expect(t.description).toContain("https://github.com/o/r/issues/5");
+    expect(t.description).toContain("https://console.tinconnect.com/projects/konnect-app");
+    expect(t.description).toContain("Requested by a@tin.info");
+  });
+  it("marks the issue in the exact format the repo's sync workflow reads", () => {
+    // The pattern below is copied from konnect-caas-base .github/workflows/agent-ticket-sync.yml.
+    const workflowPattern = /<!-- care-hub-ticket id=([0-9a-f-]{36}) number=(\S+) -->/;
+    const id = "22222222-2222-4222-8222-222222222222";
+    const m = workflowPattern.exec(ticketMarkerComment({ id, number: "PLT-0007" }));
+    expect(m?.[1]).toBe(id);
+    expect(m?.[2]).toBe("PLT-0007");
+  });
   it("without a recorded path, tells the agent how to find the app; without an origin, omits links", () => {
     const t = buildPinTask({ ...input, path: null, origin: null, packageRepo: null, observedAt: null });
     expect(t.body).toContain("Not recorded in the registry");
@@ -45,7 +72,7 @@ describe("agent task", () => {
     expect(t.body).not.toContain("Package source");
   });
   it("refuses a pin that is not behind", () => {
-    expect(() => buildPinTask({ ...input, declared: "6.0.0" })).toThrow();
+    expect(() => buildPinTask({ ...input, declared: "6.0.0", repoVersion: "6.0.0" })).toThrow();
   });
   it("only accepts owner/name repos", () => {
     expect(validRepo("tindevelopers/konnect-caas-base")).toBe(true);
@@ -63,14 +90,14 @@ describe("github", () => {
   };
 
   it("posts to the repo with labels and returns the issue url", async () => {
-    const m = stub({ ok: true, json: async () => ({ html_url: "https://github.com/o/r/issues/1" }) });
-    expect(await createIssue(buildPinTask(input), "tok")).toBe("https://github.com/o/r/issues/1");
+    const m = stub({ ok: true, json: async () => ({ html_url: "https://github.com/o/r/issues/1", number: 1 }) });
+    expect(await createIssue(buildPinTask(input), "tok")).toEqual({ url: "https://github.com/o/r/issues/1", number: 1 });
     expect(m.mock.calls[0][0]).toBe("https://api.github.com/repos/tindevelopers/konnect-caas-base/issues");
     expect(JSON.parse(m.mock.calls[0][1].body).labels).toEqual(["agent", "dependencies"]);
   });
   it("retries without labels when GitHub refuses them", async () => {
-    const m = stub({ ok: false, status: 422 }, { ok: true, json: async () => ({ html_url: "https://github.com/o/r/issues/2" }) });
-    expect(await createIssue(buildPinTask(input), "tok")).toBe("https://github.com/o/r/issues/2");
+    const m = stub({ ok: false, status: 422 }, { ok: true, json: async () => ({ html_url: "https://github.com/o/r/issues/2", number: 2 }) });
+    expect(await createIssue(buildPinTask(input), "tok")).toEqual({ url: "https://github.com/o/r/issues/2", number: 2 });
     expect(JSON.parse(m.mock.calls[1][1].body).labels).toEqual([]);
   });
   it("fails clearly without a token or on an error status", async () => {

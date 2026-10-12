@@ -4,9 +4,26 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/src/auth/access";
 import { statementsFor } from "@/src/registry/commands";
-import { registryWrite } from "@/src/registry/db";
+import { careHubConfig, resolveCareHubTicket } from "@/src/agent/carehub";
+import { resolveTicketsForPin } from "@/src/agent/resolve";
+import { markTicketsResolved, openTicketRuns, registryWrite } from "@/src/registry/db";
 import { ValidationError, parseCommand } from "@/src/registry/validate";
 import type { Command } from "@/src/registry/validate";
+
+/** A pin that reaches the version an agent ticket was raised for resolves that ticket. Never fails the save: the pin is already written. */
+async function resolveUpgradeTickets(cmd: Extract<Command, { type: "setPin" }>, actor: string) {
+  const cfg = careHubConfig();
+  if (!cfg) return;
+  try {
+    const { errors } = await resolveTicketsForPin(
+      { openRuns: openTicketRuns, resolveTicket: (ticketId, note) => resolveCareHubTicket({ ticketId, note }, cfg), markResolved: markTicketsResolved },
+      { project: cmd.slug, environment: cmd.environment, pkg: cmd.package, version: cmd.version, actor },
+    );
+    for (const e of errors) console.error("could not resolve support ticket", e);
+  } catch (e) {
+    console.error("resolving support tickets failed", e);
+  }
+}
 
 async function apply(type: Command["type"], form: FormData) {
   const admin = await requireAdmin(); // checked here, not just in the page: server actions are callable directly
@@ -16,6 +33,7 @@ async function apply(type: Command["type"], form: FormData) {
     const cmd = parseCommand(type, form);
     slug = cmd.slug;
     await registryWrite(admin.email, statementsFor(cmd));
+    if (cmd.type === "setPin") await resolveUpgradeTickets(cmd, admin.email);
   } catch (e) {
     if (e instanceof ValidationError) error = e.message;
     else {
