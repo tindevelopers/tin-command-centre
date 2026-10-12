@@ -52,7 +52,7 @@ describe("cellFinding", () => {
   it("healthy is green", () => expect(cellFinding(env("konnect-dev"), [cellSnap(200, 200)])?.colour).toBe("green"));
 });
 
-const project = (slug: string, lifecycle: Project["lifecycle"] = "active"): Project => ({ slug, name: slug, kind: "app", client: null, repo: null, lifecycle, notes: null, ownerProject: null, path: null });
+const project = (slug: string, lifecycle: Project["lifecycle"] = "active"): Project => ({ slug, name: slug, kind: "app", client: null, repo: null, lifecycle, notes: null, ownerProject: null, path: null, ownerGroup: null, tier: null, annotations: {} });
 
 describe("computeDrift", () => {
   const reg = (over: Partial<Registry>): Registry => ({ projects: [], environments: [], pins: [], adoption: [], assignments: [], relations: [], ...over });

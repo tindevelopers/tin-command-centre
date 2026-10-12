@@ -65,26 +65,26 @@ insert into boss_adoption (project_slug, environment, domain_mode) values
 on conflict (project_slug, environment) do nothing;
 
 insert into project_relations (from_slug, to_slug, relation) values
-  ('konnect-caas-base', 'konnect-app', 'hosts'),
-  ('konnect-caas-base', 'konnect-consumer', 'hosts'),
-  ('konnect-caas-base', 'konnect-conversations', 'hosts'),
-  ('konnect-caas-base', 'konnect-knowledge-collab', 'hosts'),
-  ('konnect-caas-base', 'konnect-knowledge-worker', 'hosts'),
-  ('konnect-caas-base', 'konnect-ops', 'hosts'),
-  ('konnect-caas-base', 'konnect-partner', 'hosts'),
-  ('konnect-caas-base', 'konnect-translator', 'hosts'),
-  ('konnect-caas-base', 'tin-boss-api', 'calls'),
-  ('konnect-ops', 'shell-base-admin', 'consumes'),
-  ('konnect-ops', 'shared-identity-hub', 'consumes'),
-  ('konnect-ops', 'shared-client-care-hub', 'consumes'),
-  ('konnect-ops', 'shared-integration-hub', 'consumes'),
-  ('konnect-ops', 'shell-base-cxp', 'consumes'),
-  ('konnect-ops', 'shell-base-agents', 'consumes'),
-  ('konnect-ops', 'shell-base-knowledge', 'consumes'),
-  ('konnect-ops', 'shell-base-meetings', 'consumes'),
-  ('tin-ops-console', 'shell-base-admin', 'consumes'),
-  ('tin-ops-console', 'shared-identity-hub', 'consumes'),
-  ('tin-boss-api', 'shared-api-hub', 'consumes')
+  ('konnect-caas-base', 'konnect-app', 'has_part'),
+  ('konnect-caas-base', 'konnect-consumer', 'has_part'),
+  ('konnect-caas-base', 'konnect-conversations', 'has_part'),
+  ('konnect-caas-base', 'konnect-knowledge-collab', 'has_part'),
+  ('konnect-caas-base', 'konnect-knowledge-worker', 'has_part'),
+  ('konnect-caas-base', 'konnect-ops', 'has_part'),
+  ('konnect-caas-base', 'konnect-partner', 'has_part'),
+  ('konnect-caas-base', 'konnect-translator', 'has_part'),
+  ('konnect-caas-base', 'tin-boss-api', 'consumes_api'),
+  ('konnect-ops', 'shell-base-admin', 'depends_on'),
+  ('konnect-ops', 'shared-identity-hub', 'depends_on'),
+  ('konnect-ops', 'shared-client-care-hub', 'depends_on'),
+  ('konnect-ops', 'shared-integration-hub', 'depends_on'),
+  ('konnect-ops', 'shell-base-cxp', 'depends_on'),
+  ('konnect-ops', 'shell-base-agents', 'depends_on'),
+  ('konnect-ops', 'shell-base-knowledge', 'depends_on'),
+  ('konnect-ops', 'shell-base-meetings', 'depends_on'),
+  ('tin-ops-console', 'shell-base-admin', 'depends_on'),
+  ('tin-ops-console', 'shared-identity-hub', 'depends_on'),
+  ('tin-boss-api', 'shared-api-hub', 'depends_on')
 on conflict do nothing;
 
 COMMIT;

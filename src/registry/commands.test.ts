@@ -28,7 +28,7 @@ const rows = async <T = any>(sql: string) => (await db.query<T>(sql)).rows;
 
 beforeAll(async () => {
   db = new PGlite();
-  for (const f of ["001_status.sql", "002_authority.sql", "003_owner_project.sql", "004_project_path_agent_runs.sql"]) await db.exec(readFileSync(join(__dirname, "../../db", f), "utf8"));
+  for (const f of ["001_status.sql", "002_authority.sql", "003_owner_project.sql", "004_project_path_agent_runs.sql", "005_catalog_shape.sql"]) await db.exec(readFileSync(join(__dirname, "../../db", f), "utf8"));
 });
 
 describe("registry commands run against the real schema as console_admin", () => {
@@ -46,6 +46,13 @@ describe("registry commands run against the real schema as console_admin", () =>
     await run("upsertProject", { slug: "konnect", name: "Konnect CaaS", kind: "app", lifecycle: "active", client: "konnect" });
     expect(await rows("SELECT owner_project FROM projects WHERE slug = 'konnect'")).toEqual([{ owner_project: null }]);
     await run("upsertProject", { slug: "konnect", name: "Konnect CaaS", kind: "app", lifecycle: "active", client: "konnect", ownerProject: "boss" });
+  });
+
+  it("sets the owning group and tier, and rejects an unknown group", async () => {
+    await db.exec("BEGIN; select set_config('console.actor','gene@tin.info',true); insert into groups (slug,name) values ('tin','TIN'); COMMIT");
+    await run("upsertProject", { slug: "boss", name: "BOSS", kind: "boss", lifecycle: "active", ownerProject: "boss", ownerGroup: "tin", tier: "foundation" });
+    expect(await rows("SELECT owner_group, tier FROM projects WHERE slug = 'boss'")).toEqual([{ owner_group: "tin", tier: "foundation" }]);
+    await expect(run("upsertProject", { slug: "boss", name: "BOSS", kind: "boss", lifecycle: "active", ownerProject: "boss", ownerGroup: "nope" })).rejects.toThrow(/foreign key/i);
   });
 
   it("rejects an owning project that does not exist", async () => {
@@ -88,10 +95,10 @@ describe("registry commands run against the real schema as console_admin", () =>
 
   it("adds and removes a relation", async () => {
     await run("upsertProject", { slug: "boss", name: "BOSS", kind: "boss", lifecycle: "active" });
-    await run("addRelation", { slug: "konnect", to: "boss", relation: "calls" });
-    await run("addRelation", { slug: "konnect", to: "boss", relation: "calls" });
+    await run("addRelation", { slug: "konnect", to: "boss", relation: "consumes_api" });
+    await run("addRelation", { slug: "konnect", to: "boss", relation: "consumes_api" });
     expect(await rows("SELECT 1 FROM project_relations")).toHaveLength(1);
-    await run("removeRelation", { slug: "konnect", to: "boss", relation: "calls" });
+    await run("removeRelation", { slug: "konnect", to: "boss", relation: "consumes_api" });
     expect(await rows("SELECT 1 FROM project_relations")).toEqual([]);
   });
 

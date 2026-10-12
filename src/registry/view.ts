@@ -22,7 +22,7 @@ export type ProjectRow = {
 export function summarise(reg: Registry, findings: Finding[]): ProjectRow[] {
   const nameOf = new Map(reg.projects.map((p) => [p.slug, p.name]));
   const parentOf = new Map<string, string>();
-  for (const r of reg.relations) if (r.relation === "hosts" && !parentOf.has(r.toSlug)) parentOf.set(r.toSlug, r.fromSlug);
+  for (const r of reg.relations) if (r.relation === "has_part" && !parentOf.has(r.toSlug)) parentOf.set(r.toSlug, r.fromSlug);
   return reg.projects.map((p) => {
     const bad = findings.filter((f) => f.projectSlug === p.slug && f.colour !== "green").sort(bySeverity);
     const red = bad.filter((f) => f.colour === "red").length;
