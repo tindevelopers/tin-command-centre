@@ -7,10 +7,10 @@ export function statementsFor(c: Command): Statement[] {
   switch (c.type) {
     case "upsertProject":
       return [{
-        text: `INSERT INTO projects (slug, name, kind, client, repo, lifecycle, notes, owner_project, path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        text: `INSERT INTO projects (slug, name, kind, client, repo, lifecycle, notes, owner_project, path, owner_group, tier) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
                ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind, client = EXCLUDED.client,
-                 repo = EXCLUDED.repo, lifecycle = EXCLUDED.lifecycle, notes = EXCLUDED.notes, owner_project = EXCLUDED.owner_project, path = EXCLUDED.path, updated_at = now()`,
-        params: [c.slug, c.name, c.kind, c.client, c.repo, c.lifecycle, c.notes, c.ownerProject, c.path],
+                 repo = EXCLUDED.repo, lifecycle = EXCLUDED.lifecycle, notes = EXCLUDED.notes, owner_project = EXCLUDED.owner_project, path = EXCLUDED.path, owner_group = EXCLUDED.owner_group, tier = EXCLUDED.tier, updated_at = now()`,
+        params: [c.slug, c.name, c.kind, c.client, c.repo, c.lifecycle, c.notes, c.ownerProject, c.path, c.ownerGroup, c.tier],
       }];
     case "upsertEnvironment":
       return [{

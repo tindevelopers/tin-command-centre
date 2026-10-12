@@ -9,7 +9,7 @@ describe("registry seed draft", () => {
   it("applies cleanly twice on the real schema and audits every row", async () => {
     const db = new PGlite();
     await db.exec(read("001_status.sql"));
-    await db.exec(read("002_authority.sql"));
+    for (const f of ["002_authority.sql", "003_owner_project.sql", "004_project_path_agent_runs.sql", "005_catalog_shape.sql"]) await db.exec(read(f));
     const seed = read("seed/001_projects.draft.sql");
     await db.exec(seed);
     const count = async (t: string) => (await db.query<{ n: number }>(`select count(*)::int n from ${t}`)).rows[0].n;

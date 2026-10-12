@@ -3,7 +3,7 @@ import { applyProjectFilters, filterFindings, filterPackageRows, isNestedView, n
 import type { Finding, Project, Registry } from "./types";
 import type { PackageSnapshot } from "@/src/status/types";
 
-const proj = (slug: string, over: Partial<Project> = {}): Project => ({ slug, name: slug.toUpperCase(), kind: "app", client: null, repo: null, lifecycle: "active", notes: null, ownerProject: null, path: null, ...over });
+const proj = (slug: string, over: Partial<Project> = {}): Project => ({ slug, name: slug.toUpperCase(), kind: "app", client: null, repo: null, lifecycle: "active", notes: null, ownerProject: null, path: null, ownerGroup: null, tier: null, annotations: {}, ...over });
 const finding = (projectSlug: string, colour: Finding["colour"], message = "m", kind: Finding["kind"] = "pin", subject = "pkg"): Finding => ({ projectSlug, environment: "development", kind, subject, colour, message });
 
 const reg: Registry = {
@@ -13,7 +13,7 @@ const reg: Registry = {
   ],
   environments: [], pins: [], adoption: [],
   assignments: [{ id: "1", projectSlug: "boss", assignee: "gene@tin.info", role: "owner", assignedBy: "x", assignedAt: new Date() }, { id: "2", projectSlug: "ops", assignee: "mary@tin.info", role: "maintainer", assignedBy: "x", assignedAt: new Date() }],
-  relations: [{ fromSlug: "caas", toSlug: "ops", relation: "hosts" }, { fromSlug: "caas", toSlug: "partner", relation: "hosts" }, { fromSlug: "boss", toSlug: "caas", relation: "consumes" }],
+  relations: [{ fromSlug: "caas", toSlug: "ops", relation: "has_part" }, { fromSlug: "caas", toSlug: "partner", relation: "has_part" }, { fromSlug: "boss", toSlug: "caas", relation: "depends_on" }],
 };
 const findings = [finding("ops", "red", "behind a major"), finding("ops", "amber"), finding("partner", "amber"), finding("boss", "green"), finding("caas", "green")];
 const rows = summarise(reg, findings);
@@ -31,11 +31,11 @@ describe("summarise", () => {
     expect(row("ops")).toMatchObject({ ownerProject: "caas", ownerName: "CAAS" });
     expect(row("partner")).toMatchObject({ ownerProject: null, ownerName: null });
   });
-  it("takes owners from owner assignments only, and the parent from 'hosts' relations", () => {
+  it("takes owners from owner assignments only, and the parent from 'has_part' relations", () => {
     expect(row("boss").owners).toEqual(["gene@tin.info"]);
     expect(row("ops").owners).toEqual([]); // a maintainer is not an owner
     expect(row("ops").parent).toBe("caas");
-    expect(row("caas").parent).toBeNull(); // 'consumes' does not nest
+    expect(row("caas").parent).toBeNull(); // 'depends_on' does not nest
   });
 });
 

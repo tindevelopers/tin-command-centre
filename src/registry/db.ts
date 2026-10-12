@@ -2,7 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { cellSnapshots, latestDataRun, packageSnapshots } from "@/src/status/db";
 import type { CellSnapshot, CollectorRun, PackageSnapshot } from "@/src/status/types";
 import type { Statement } from "./commands";
-import type { Registry } from "./types";
+import type { Group, Registry } from "./types";
 
 type Row = Record<string, any>;
 
@@ -22,13 +22,23 @@ export async function loadRegistry(): Promise<Registry> {
     read("select * from project_relations order by from_slug, to_slug"),
   ]);
   return {
-    projects: projects.map((r) => ({ slug: r.slug, name: r.name, kind: r.kind, client: r.client, repo: r.repo, lifecycle: r.lifecycle, notes: r.notes, ownerProject: r.owner_project ?? null, path: r.path ?? null })),
+    projects: projects.map((r) => ({ slug: r.slug, name: r.name, kind: r.kind, client: r.client, repo: r.repo, lifecycle: r.lifecycle, notes: r.notes, ownerProject: r.owner_project ?? null, path: r.path ?? null, ownerGroup: r.owner_group ?? null, tier: r.tier ?? null, annotations: r.annotations ?? {} })),
     environments: environments.map((r) => ({ projectSlug: r.project_slug, name: r.name, cell: r.cell, region: r.region, url: r.url })),
     pins: pins.map((r) => ({ projectSlug: r.project_slug, environment: r.environment, package: r.package, version: r.version })),
     adoption: adoption.map((r) => ({ projectSlug: r.project_slug, environment: r.environment, domainMode: r.domain_mode })),
     assignments: assignments.map((r) => ({ id: String(r.id), projectSlug: r.project_slug, assignee: r.assignee, role: r.role, assignedBy: r.assigned_by, assignedAt: new Date(r.assigned_at) })),
     relations: relations.map((r) => ({ fromSlug: r.from_slug, toSlug: r.to_slug, relation: r.relation })),
   };
+}
+
+/** Owning groups (db/005). Groups are added by SQL for now, like operators. Empty before the migration runs. */
+export async function loadGroups(): Promise<Group[]> {
+  try {
+    const rows = await read("select slug, name, parent from groups order by slug");
+    return rows.map((r) => ({ slug: r.slug, name: r.name, parent: r.parent ?? null }));
+  } catch {
+    return [];
+  }
 }
 
 export type Observed = { run: CollectorRun | null; packages: PackageSnapshot[] | null; cells: CellSnapshot[] | null };

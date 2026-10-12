@@ -10,7 +10,7 @@ const bad = (type: Parameters<typeof parseCommand>[0], o: Record<string, string>
 describe("parseCommand", () => {
   it("parses a project and trims, with blank optionals as null", () => {
     expect(parseCommand("upsertProject", form({ slug: "konnect", name: " Konnect ", kind: "app", lifecycle: "active", client: "", repo: "tindevelopers/konnect-caas-base" })))
-      .toEqual({ type: "upsertProject", slug: "konnect", name: "Konnect", kind: "app", client: null, repo: "tindevelopers/konnect-caas-base", lifecycle: "active", notes: null, ownerProject: null, path: null });
+      .toEqual({ type: "upsertProject", slug: "konnect", name: "Konnect", kind: "app", client: null, repo: "tindevelopers/konnect-caas-base", lifecycle: "active", notes: null, ownerProject: null, path: null, ownerGroup: null, tier: null });
   });
 
   it.each([
@@ -26,7 +26,9 @@ describe("parseCommand", () => {
     ["assign", { slug: "ok", assignee: "not-an-email", role: "owner" }],
     ["assign", { slug: "ok", assignee: "a@tin.info", role: "boss" }],
     ["unassign", { slug: "ok", id: "1; drop table x" }],
-    ["addRelation", { slug: "ok", to: "ok", relation: "consumes" }],
+    ["addRelation", { slug: "ok", to: "ok", relation: "depends_on" }],
+    ["addRelation", { slug: "ok", to: "other", relation: "consumes" }],
+    ["upsertProject", { slug: "ok", name: "x", kind: "app", lifecycle: "active", tier: "sky" }],
   ] as const)("rejects invalid %s input", (type, o) => {
     expect(bad(type, o)).toBeInstanceOf(ValidationError);
   });
@@ -48,6 +50,12 @@ describe("parseCommand", () => {
     expect(parseCommand("upsertProject", form({ ...base, path: " apps/ops/ " }))).toMatchObject({ path: "apps/ops" });
     expect(parseCommand("upsertProject", form({ ...base, path: "" }))).toMatchObject({ path: null });
     for (const p of ["/etc", "../x", "a/../b", "a b", "a//b", "apps/ops;rm"]) expect(bad("upsertProject", { ...base, path: p })).toBeInstanceOf(ValidationError);
+  });
+
+  it("reads an optional owning group and tier", () => {
+    const base = { slug: "boss", name: "BOSS", kind: "boss", lifecycle: "active" };
+    expect(parseCommand("upsertProject", form({ ...base, ownerGroup: "tin-platform", tier: "foundation" }))).toMatchObject({ ownerGroup: "tin-platform", tier: "foundation" });
+    expect(parseCommand("upsertProject", form({ ...base, ownerGroup: "", tier: "" }))).toMatchObject({ ownerGroup: null, tier: null });
   });
 
   it("lower-cases assignee emails", () => {

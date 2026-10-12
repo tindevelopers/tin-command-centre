@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { currentOperator, requireOperator } from "@/src/auth/access";
 import { bySeverity, computeDrift } from "@/src/registry/drift";
-import { loadObserved, loadRegistry, registryConfigured, registryWritable } from "@/src/registry/db";
-import { ASSIGN_ROLES, DOMAIN_MODES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS } from "@/src/registry/types";
+import { loadGroups, loadObserved, loadRegistry, registryConfigured, registryWritable } from "@/src/registry/db";
+import { ASSIGN_ROLES, DOMAIN_MODES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS, TIERS } from "@/src/registry/types";
 import { addRelation, assign, removePin, removeRelation, saveEnvironment, saveProject, setAdoption, setPin, unassign } from "../actions";
 import { ErrorNotice, Findings, Section, Select, btnCls, inputCls, linkBtnCls } from "@/components/RegistryUi";
 import { Notice, PageHeading, Table, fmt, td } from "@/components/StatusUi";
@@ -16,7 +16,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const { error } = await searchParams;
   if (!registryConfigured()) return <Notice>The status store is not connected. Set CONSOLE_DATABASE_URL.</Notice>;
 
-  const [reg, observed, op] = await Promise.all([loadRegistry(), loadObserved(), currentOperator()]);
+  const [reg, observed, op, groups] = await Promise.all([loadRegistry(), loadObserved(), currentOperator(), loadGroups()]);
   const project = reg.projects.find((p) => p.slug === slug);
   if (!project) notFound();
 
@@ -173,6 +173,18 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
               <select name="ownerProject" autoComplete="off" defaultValue={project.ownerProject ?? ""} className={inputCls}>
                 <option value="">(none)</option>
                 {reg.projects.map((x) => <option key={x.slug} value={x.slug}>{x.slug === slug ? `${x.name} (itself)` : x.name}</option>)}
+              </select>
+            </label>
+            <label className="text-sm">Owning group<br />
+              <select name="ownerGroup" autoComplete="off" defaultValue={project.ownerGroup ?? ""} className={inputCls}>
+                <option value="">(none)</option>
+                {groups.map((g) => <option key={g.slug} value={g.slug}>{g.name}</option>)}
+              </select>
+            </label>
+            <label className="text-sm">Tier<br />
+              <select name="tier" autoComplete="off" defaultValue={project.tier ?? ""} className={inputCls}>
+                <option value="">(none)</option>
+                {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </label>
             <label className="text-sm">Notes<br /><input name="notes" autoComplete="off" className={inputCls} defaultValue={project.notes ?? ""} /></label>

@@ -1,11 +1,11 @@
-import { ASSIGN_ROLES, DOMAIN_MODES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS } from "./types";
-import type { AssignRole, DomainMode, EnvName, Kind, Lifecycle, Relation } from "./types";
+import { ASSIGN_ROLES, DOMAIN_MODES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS, TIERS } from "./types";
+import type { AssignRole, DomainMode, EnvName, Kind, Lifecycle, Relation, Tier } from "./types";
 
 /** A message that is safe to show the operator. Anything else is reported generically. */
 export class ValidationError extends Error {}
 
 export type Command =
-  | { type: "upsertProject"; slug: string; name: string; kind: Kind; client: string | null; repo: string | null; lifecycle: Lifecycle; notes: string | null; ownerProject: string | null; path: string | null }
+  | { type: "upsertProject"; slug: string; name: string; kind: Kind; client: string | null; repo: string | null; lifecycle: Lifecycle; notes: string | null; ownerProject: string | null; path: string | null; ownerGroup: string | null; tier: Tier | null }
   | { type: "upsertEnvironment"; slug: string; name: EnvName; cell: string | null; region: string | null; url: string | null }
   | { type: "setPin"; slug: string; environment: EnvName; package: string; version: string }
   | { type: "removePin"; slug: string; environment: EnvName; package: string }
@@ -29,6 +29,7 @@ const oneOf = <T extends string>(f: Form, k: string, allowed: readonly T[], labe
   if (!(allowed as readonly string[]).includes(v)) throw new ValidationError(`${label} must be one of: ${allowed.join(", ")}.`);
   return v as T;
 };
+const optionalOneOf = <T extends string>(f: Form, k: string, allowed: readonly T[], label: string): T | null => (text(f, k) ? oneOf(f, k, allowed, label) : null);
 const slug = (f: Form, k = "slug", label = "Project") => {
   const v = required(f, k, label);
   if (!/^[a-z0-9][a-z0-9-]*$/.test(v)) throw new ValidationError(`${label} id may only use lower-case letters, digits and hyphens.`);
@@ -64,7 +65,7 @@ const exactVersion = (f: Form, k: string) => {
 export function parseCommand(type: Command["type"], f: Form): Command {
   switch (type) {
     case "upsertProject":
-      return { type, slug: slug(f), name: required(f, "name", "Name"), kind: oneOf(f, "kind", KINDS, "Kind"), client: optional(f, "client"), repo: optional(f, "repo"), lifecycle: oneOf(f, "lifecycle", LIFECYCLES, "Lifecycle"), notes: optional(f, "notes"), ownerProject: optionalSlug(f, "ownerProject", "Owning project"), path: optionalPath(f) };
+      return { type, slug: slug(f), name: required(f, "name", "Name"), kind: oneOf(f, "kind", KINDS, "Kind"), client: optional(f, "client"), repo: optional(f, "repo"), lifecycle: oneOf(f, "lifecycle", LIFECYCLES, "Lifecycle"), notes: optional(f, "notes"), ownerProject: optionalSlug(f, "ownerProject", "Owning project"), path: optionalPath(f), ownerGroup: optionalSlug(f, "ownerGroup", "Owning group"), tier: optionalOneOf(f, "tier", TIERS, "Tier") };
     case "upsertEnvironment":
       return { type, slug: slug(f), name: oneOf(f, "name", ENV_NAMES, "Environment"), cell: optional(f, "cell"), region: optional(f, "region"), url: url(f, "url") };
     case "setPin":
