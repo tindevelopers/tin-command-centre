@@ -3,9 +3,11 @@
 -- transaction; every row is audited under the actor below. Change the actor to the person applying it.
 --
 -- Rules used:
---   * Hubs, shell-bases, chassis, the BOSS, the registry and this console are owned by the group tin-platform.
---   * Konnect's monorepo (konnect-caas-base) is owned by the group konnect; its eight apps are owned by that project
---     (owner_project) and inherit the group, so moving the monorepo to another group moves them with it.
+--   * The owner's existing owner_project chain is kept as it is. It has two roots that own themselves: tin-boss-api
+--     (the BOSS, 9 core hubs and shell-bases, the registry and this console) and konnect-caas-base (Konnect's
+--     monorepo, its eight apps and the four shell-base hubs built for Konnect: agents, cxp, knowledge, meetings).
+--   * So only the two roots need a group. Everything else inherits it through owner_project, and moving a root to
+--     another group moves its whole tree.
 --   * Tiers follow docs/onboarding/02-platform-schema-and-scope.md section 1. tin-boss-api has no tier: the docs put
 --     the BOSS in its own layer, which is not one of the seven allowed tier values.
 BEGIN;
@@ -17,19 +19,8 @@ insert into groups (slug, name, parent) values
   ('konnect',      'Konnect',      null)
 on conflict (slug) do nothing;
 
--- tin-platform: the BOSS, every hub and shell-base, the design hub, governance and internal tooling.
-update projects set owner_group = 'tin-platform'
- where slug in ('tin-boss-api', 'shell-base-admin', 'shared-api-hub', 'shared-client-care-hub', 'shared-identity-hub',
-                'shared-integration-hub', 'shell-base-cxp', 'shell-base-knowledge', 'shell-base-meetings', 'shell-base-agents',
-                'shell-base-finance', 'shell-base-boss', 'chassis', 'shell-base-github-registry', 'tin-ops-console')
-   and owner_group is distinct from 'tin-platform';
-
--- konnect: the monorepo owns itself in the group; each app is owned by the monorepo.
-update projects set owner_group = 'konnect' where slug = 'konnect-caas-base' and owner_group is distinct from 'konnect';
-update projects set owner_project = 'konnect-caas-base'
- where slug in ('konnect-app', 'konnect-consumer', 'konnect-conversations', 'konnect-knowledge-collab',
-                'konnect-knowledge-worker', 'konnect-ops', 'konnect-partner', 'konnect-translator')
-   and owner_project is distinct from 'konnect-caas-base';
+update projects set owner_group = 'tin-platform' where slug = 'tin-boss-api'      and owner_group is distinct from 'tin-platform';
+update projects set owner_group = 'konnect'      where slug = 'konnect-caas-base' and owner_group is distinct from 'konnect';
 
 -- Tiers.
 update projects set tier = t.tier from (values
