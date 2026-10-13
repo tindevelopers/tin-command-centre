@@ -50,3 +50,14 @@ A project is owned by another **project** (`projects.owner_project`, migration `
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.
 2. A bulk import for new projects, so the registry is not filled one form at a time.
 3. Decide whether other systems (registry, cell files) are later generated from the console, or stay as inputs it reconciles against.
+
+## Catalog export (specialist upgrade, phase 1)
+
+`scripts/export-catalog.mjs` writes the declared registry as a Backstage catalog: one YAML file per entity and an `all.yaml` Location. It proves the registry exports without a translation table, and it is the ponytail version of a Backstage EntityProvider: the mapping is `toCatalogEntities()` in `src/registry/catalog.ts`, and a provider would call the same function in-process.
+
+```
+CONSOLE_DATABASE_URL=<read-only login> node --experimental-strip-types scripts/export-catalog.mjs catalog
+node --experimental-strip-types scripts/export-catalog.mjs catalog --from registry.json   # no database
+```
+
+Mapping: hub and shell-base become Systems; package, boss, spoke and app become Components (library, service, service, website); tiers become Domains; groups become Groups; the owner is the project's group, else its owning project's group, else the first owner person (as a User), else an explicit `unowned` group with a warning. Nothing is written back to the registry, and the files are generated, never hand-edited. Backstage is not run here: standing it up waits for a trigger in the strategy (a third product app, more than about 30 projects, or a second team).
