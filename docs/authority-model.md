@@ -45,6 +45,10 @@ A project is owned by another **project** (`projects.owner_project`, migration `
 - The Overview shows active projects, the number of red and amber findings, collector freshness, and the most urgent findings.
 - The collector (`shell-base-github-registry`, `scripts/collect-status.mjs`) records observed package versions and cell health daily. On `*.run.app` cells it checks `/readyz` only, because Cloud Run reserves `/healthz`.
 
+## Collect now
+
+The Collector page has a **Collect now** button for admins. It does not collect inside the console (the console has no `collector_writer` login, by design). It dispatches the collector repo's `register.yml` workflow (`workflow_dispatch`), which regenerates the register, checks cell health and records a run exactly like the daily one. Needs `COLLECTOR_GITHUB_TOKEN` (fine-grained, Actions: read and write on `shell-base-github-registry`); the button is hidden without it. A second click is refused for 5 minutes after any run starts, and while a run is marked `running`. Logic: `src/status/collect.ts`; action: `app/(console)/collector/actions.ts`.
+
 ## Still to build
 
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.

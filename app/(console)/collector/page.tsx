@@ -1,12 +1,17 @@
 import { requireOperator } from "@/src/auth/access";
+import { collectionConfigured } from "@/src/status/collect";
 import { recentRuns, statusStoreConfigured } from "@/src/status/db";
 import { staleness } from "@/src/status/rules";
 import { Notice, PageHeading, StatusDot, Table, fmt, td } from "@/components/StatusUi";
+import { btnCls } from "@/components/RegistryUi";
+import { collectNow } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function CollectorPage() {
-  await requireOperator();
+export default async function CollectorPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const op = await requireOperator();
+  const sp = await searchParams;
+  const one = (k: string) => (Array.isArray(sp[k]) ? sp[k][0] : sp[k]) ?? "";
   if (!statusStoreConfigured()) {
     return (
       <div>
@@ -20,6 +25,17 @@ export default async function CollectorPage() {
   return (
     <div>
       <PageHeading title="Collector" subtitle="Freshness is green under 26 hours, amber to 50 hours, red beyond." />
+      {one("error") && <div className="mb-4"><Notice>{one("error")}</Notice></div>}
+      {one("started") && (
+        <div className="mb-4">
+          <Notice>Collection started. It takes a few minutes; reload this page to see the new run. <a className="underline" href={one("started")} target="_blank" rel="noreferrer">Watch it on GitHub</a></Notice>
+        </div>
+      )}
+      {op.role === "admin" && collectionConfigured() && (
+        <form action={collectNow} className="mb-4">
+          <button type="submit" className={btnCls}>Collect now</button>
+        </form>
+      )}
       {runs.length === 0 ? (
         <Notice>No collector runs recorded yet.</Notice>
       ) : (
