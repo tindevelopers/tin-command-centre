@@ -11,8 +11,8 @@ const outfit = localFont({
 });
 
 export const metadata = {
-  title: "TIN Ops",
-  description: "Status of TIN hubs, packages, cells and keys",
+  title: "TIN Command Center",
+  description: "What TIN runs, who owns it, and whether it matches what was declared",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

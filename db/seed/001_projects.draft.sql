@@ -1,4 +1,4 @@
--- DRAFT. Seed for the TIN ops console registry. Review before applying; nothing here has been run on Neon.
+-- DRAFT. Seed for the TIN Command Center registry. Review before applying; nothing here has been run on Neon.
 -- Idempotent. Owners are not set: they are not in any repo, so each project will show "No owner assigned" until you assign one.
 -- Run as neondb_owner (or console_admin) in one transaction; every row is audited under the actor below.
 BEGIN;
@@ -28,7 +28,7 @@ insert into projects (slug, name, kind, client, repo, lifecycle, notes) values
   ('konnect-ops', 'Konnect ops', 'app', 'konnect', 'tindevelopers/konnect-caas-base', 'active', 'apps/ops; first BOSS adoption seam (Stage 4).'),
   ('konnect-partner', 'Konnect partner', 'app', 'konnect', 'tindevelopers/konnect-caas-base', 'active', 'apps/partner'),
   ('konnect-translator', 'Konnect translator', 'app', 'konnect', 'tindevelopers/konnect-caas-base', 'active', 'apps/translator'),
-  ('tin-ops-console', 'TIN ops console', 'app', null, 'tindevelopers/tin-ops-console', 'active', 'This console.')
+  ('tin-ops-console', 'TIN Command Center', 'app', null, 'tindevelopers/tin-ops-console', 'active', 'This app (formerly the ops console).')
 on conflict (slug) do nothing;
 
 insert into environments (project_slug, name, cell, region, url) values

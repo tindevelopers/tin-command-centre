@@ -7,7 +7,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const { step = "signin", error, email = "", notice } = await searchParams;
   return (
     <main className="mx-auto mt-24 max-w-sm space-y-4 px-4">
-      <h1 className="text-title-sm font-semibold text-gray-800 dark:text-white/90">TIN Ops</h1>
+      <h1 className="text-title-sm font-semibold text-gray-800 dark:text-white/90">TIN Command Center</h1>
       {notice === "password-set" && <p role="status">Password set. Sign in below.</p>}
       {error && <p role="alert" className="text-error-500">{error}</p>}
 

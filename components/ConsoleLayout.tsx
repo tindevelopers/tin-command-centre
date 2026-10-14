@@ -6,7 +6,7 @@ import AppHeader from "@tindevelopers/ui-shell/layout/AppHeader";
 import { consoleNavigation } from "@/config/navigation";
 import React from "react";
 
-const branding = { companyName: "TIN Ops" };
+const branding = { companyName: "TIN Command" };
 
 /** Thin instantiation of the shared shell, same shape as konnect-caas-base/apps/ops/components/ConsoleLayout.tsx. */
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {

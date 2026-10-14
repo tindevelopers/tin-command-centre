@@ -6,7 +6,7 @@ import type { PinTaskInput } from "./task";
 const input: PinTaskInput = {
   repo: "tindevelopers/konnect-caas-base", path: "apps/app", project: "konnect-app", environment: "development", pkg: "@tindevelopers/domain-support",
   declared: "5.1.0", latest: "6.0.0", observedAt: new Date("2026-10-06T07:35:00Z"), packageRepo: "tindevelopers/shared-api-hub",
-  origin: "https://console.tinconnect.com", alsoBehind: [{ slug: "konnect-app", environment: "development", version: "5.1.0" }, { slug: "konnect-ops", environment: "development", version: "5.1.0" }],
+  origin: "https://command.tinconnect.com", alsoBehind: [{ slug: "konnect-app", environment: "development", version: "5.1.0" }, { slug: "konnect-ops", environment: "development", version: "5.1.0" }],
   requestedBy: "a@tin.info",
 };
 
@@ -23,7 +23,7 @@ describe("agent task", () => {
     for (const h of ["## Where this lives", "## Evidence", "## What to do", "## Done when", "## Rules"]) expect(t.body).toContain(h);
     expect(t.body).toMatch(/^@claude /);
     expect(t.body).toContain("`apps/app/package.json`");
-    expect(t.body).toContain("https://console.tinconnect.com/projects/konnect-app");
+    expect(t.body).toContain("https://command.tinconnect.com/projects/konnect-app");
     expect(t.body).toContain("https://github.com/tindevelopers/shared-api-hub/releases");
     expect(t.body).toContain("observed 2026-10-06 07:35 UTC");
     expect(t.body).toContain("**major**");

@@ -169,7 +169,7 @@ export function locationEntity(entities: Entity[]): Entity {
   return {
     apiVersion: "backstage.io/v1alpha1",
     kind: "Location",
-    metadata: { name: "tin-catalog", description: "Generated from the TIN ops console registry. Do not edit by hand." },
+    metadata: { name: "tin-catalog", description: "Generated from the TIN Command Center registry. Do not edit by hand." },
     spec: { targets: entities.map((e) => `./${fileName(e)}`) },
   };
 }

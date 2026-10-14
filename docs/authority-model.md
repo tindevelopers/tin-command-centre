@@ -1,4 +1,6 @@
-# Authority model: the console is the source of truth
+# Authority model: the Command Center is the source of truth
+
+> **Naming (2026-10-14).** The TIN ops console is now the **TIN Command Center**, served at `command.tinconnect.com` (was `console.tinconnect.com`). Identifiers are unchanged on purpose: the repo and package are `tin-ops-console`, the Neon project is `tin-ops-console`, the registry slug is `tin-ops-console`, and env vars keep the `CONSOLE_` prefix. Text below that says "the console" means the Command Center.
 
 **Status:** Owner decision, 2026-10-05. Amends `docs/specs/2026-10-03-tin-ops-console-design.md` in `shell-base-admin` (PR #99).
 

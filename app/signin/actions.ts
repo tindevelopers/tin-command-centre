@@ -14,7 +14,7 @@ function signInMessage(error: { code?: string; message?: string; status?: number
     case "INVALID_EMAIL_OR_PASSWORD":
       return "Sign-in failed. Check your email and password.";
     case "INVALID_ORIGIN":
-      return "Sign-in failed: Neon Auth does not trust this web address. Use tin-ops-console.vercel.app, or ask an admin to add this address as a trusted domain.";
+      return "Sign-in failed: Neon Auth does not trust this web address. Use command.tinconnect.com, or ask an admin to add this address as a trusted domain.";
     case "USER_BANNED":
       return "Sign-in failed: this account is disabled.";
     default:
