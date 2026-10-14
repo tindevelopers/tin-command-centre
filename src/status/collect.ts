@@ -2,11 +2,11 @@ import type { CollectorRun } from "./types";
 
 /**
  * On-demand collection. The console never writes observed state itself (it has no collector_writer login, by design).
- * Instead it starts the collector's own workflow, which regenerates the register, checks cell health and records a run
- * as collector_writer. The workflow already allows `workflow_dispatch`; the daily schedule is unchanged.
+ * Instead it starts the collector's quick workflow (`collect.yml`), which reuses the committed register for packages, checks cell health live and records a run
+ * as collector_writer. The daily `register.yml` schedule is unchanged and still regenerates the register.
  */
 const DEFAULT_REPO = "tindevelopers/shell-base-github-registry";
-const DEFAULT_WORKFLOW = "register.yml";
+const DEFAULT_WORKFLOW = "collect.yml";
 
 export const collectionConfigured = () => !!process.env.COLLECTOR_GITHUB_TOKEN;
 

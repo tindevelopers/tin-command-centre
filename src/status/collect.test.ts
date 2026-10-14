@@ -30,9 +30,9 @@ describe("startCollection", () => {
   it("dispatches the workflow on main and returns the Actions URL", async () => {
     const m = stub(204);
     const url = await startCollection({ token: "t" });
-    expect(url).toBe("https://github.com/tindevelopers/shell-base-github-registry/actions/workflows/register.yml");
+    expect(url).toBe("https://github.com/tindevelopers/shell-base-github-registry/actions/workflows/collect.yml");
     const [endpoint, init] = m.mock.calls[0];
-    expect(endpoint).toBe("https://api.github.com/repos/tindevelopers/shell-base-github-registry/actions/workflows/register.yml/dispatches");
+    expect(endpoint).toBe("https://api.github.com/repos/tindevelopers/shell-base-github-registry/actions/workflows/collect.yml/dispatches");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual({ ref: "main" });
     expect(init.headers.authorization).toBe("Bearer t");
