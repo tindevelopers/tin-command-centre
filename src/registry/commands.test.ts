@@ -6,6 +6,7 @@ import { statementsFor } from "./commands";
 import { parseCommand } from "./validate";
 
 let db: PGlite;
+let tin: string;
 const form = (o: Record<string, string>) => ({ get: (k: string) => o[k] ?? null });
 
 /** Same shape as db.ts: one transaction, as console_admin, actor set first. */
@@ -14,6 +15,7 @@ async function run(type: Parameters<typeof parseCommand>[0], o: Record<string, s
   await db.exec("SET ROLE console_admin");
   try {
     await db.exec("BEGIN");
+    await db.query("SELECT set_config('app.tenant_id', $1, true)", [tin]);
     await db.query("SELECT set_config('console.actor', $1, true)", [actor]);
     for (const s of stmts) await db.query(s.text, s.params);
     await db.exec("COMMIT");
@@ -28,7 +30,8 @@ const rows = async <T = any>(sql: string) => (await db.query<T>(sql)).rows;
 
 beforeAll(async () => {
   db = new PGlite();
-  for (const f of ["001_status.sql", "002_authority.sql", "003_owner_project.sql", "004_project_path_agent_runs.sql", "005_catalog_shape.sql"]) await db.exec(readFileSync(join(__dirname, "../../db", f), "utf8"));
+  for (const f of ["001_status.sql", "002_authority.sql", "003_owner_project.sql", "004_project_path_agent_runs.sql", "005_catalog_shape.sql", "006_tenants.sql"]) await db.exec(readFileSync(join(__dirname, "../../db", f), "utf8"));
+  tin = (await db.query<{ id: string }>("select id from tenants where slug = 'tin'")).rows[0].id;
 });
 
 describe("registry commands run against the real schema as console_admin", () => {
@@ -49,7 +52,7 @@ describe("registry commands run against the real schema as console_admin", () =>
   });
 
   it("sets the owning group and tier, and rejects an unknown group", async () => {
-    await db.exec("BEGIN; select set_config('console.actor','gene@tin.info',true); insert into groups (slug,name) values ('tin','TIN'); COMMIT");
+    await db.exec(`BEGIN; select set_config('console.actor','gene@tin.info',true); select set_config('app.tenant_id','${tin}',true); insert into groups (slug,name) values ('tin','TIN'); COMMIT`);
     await run("upsertProject", { slug: "boss", name: "BOSS", kind: "boss", lifecycle: "active", ownerProject: "boss", ownerGroup: "tin", tier: "foundation" });
     expect(await rows("SELECT owner_group, tier FROM projects WHERE slug = 'boss'")).toEqual([{ owner_group: "tin", tier: "foundation" }]);
     await expect(run("upsertProject", { slug: "boss", name: "BOSS", kind: "boss", lifecycle: "active", ownerProject: "boss", ownerGroup: "nope" })).rejects.toThrow(/foreign key/i);

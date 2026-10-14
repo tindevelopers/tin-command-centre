@@ -51,6 +51,20 @@ A project is owned by another **project** (`projects.owner_project`, migration `
 
 The Collector page has a **Collect now** button for admins. It does not collect inside the console (the console has no `collector_writer` login, by design). It dispatches the collector repo's quick workflow, `collect.yml` (`workflow_dispatch`). That run skips regenerating the register, the slow part: it reuses the committed `REGISTER.json` for packages (the run's note on the Collector page says how old that data is), checks cell health live and records a run as `collector_writer`. The daily `register.yml` run still refreshes everything. Needs `COLLECTOR_GITHUB_TOKEN` (fine-grained, Actions: read and write on `shell-base-github-registry`); the button is hidden without it. A second click is refused for 5 minutes after any run starts, and while a run is marked `running`. Logic: `src/status/collect.ts`; action: `app/(console)/collector/actions.ts`.
 
+## Tenants (phase 1)
+
+The registry is tenant-scoped (`db/006_tenants.sql`; design in the Programming KB under Products > TIN Command Center > Architecture). Everything that existed is tenant `tin`. Phase 1 has no second tenant yet; it puts the isolation in place first.
+
+- **How a request is scoped.** The tenant comes from the `Host` header (`src/tenancy/host.ts`, configured by `COMMAND_BASE_DOMAIN`, `DEFAULT_TENANT`, `TENANT_OTHER_HOSTS`). Every read and write runs in a transaction that first sets `app.tenant_id` (`src/tenancy/db.ts`). Row-level security on each registry table then limits rows to that tenant, and inserts are stamped with it. With no tenant set, nothing is readable or writable.
+- **Keys.** Slugs are unique per tenant, and foreign keys are composite, so a row can only reference its own tenant's rows.
+- **Not tenant-scoped.** The collector's runs and snapshots describe the shared estate. Tenants will see them only through explicit views (a later phase).
+- **Tenant lookup.** The app roles cannot read `tenants`; `resolve_tenant(slug)` is the only way to learn an id.
+- **Dedicated databases.** `tenants.isolation` and `connection_ref` exist, and `connectionFor()` is the single place a connection is chosen, so an enterprise tenant can move to its own database later without touching callers.
+- **Guard.** `db/tenants.test.ts` fails if a new table is neither tenant-scoped with a policy nor on the platform list.
+- **Rollout order.** Deploy this code first, then apply `db/006_tenants.sql` straight away. Before 006 the code still reads the registry (it finds no `resolve_tenant()` and runs unscoped), but registry writes need 006. Applying 006 first would leave the old code reading an empty registry. Try 006 on a Neon branch first.
+- **Seeds.** `db/seed/*.draft.sql` were written before `006` and have not been run. After `006` they need `app.tenant_id` set and `ON CONFLICT (tenant_id, ...)` targets.
+- **Catalog export.** `scripts/export-catalog.mjs` reads the tenant named by `CONSOLE_TENANT` (default `tin`).
+
 ## Still to build
 
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.

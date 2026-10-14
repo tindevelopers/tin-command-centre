@@ -1,4 +1,5 @@
-import { neon } from "@neondatabase/serverless";
+import { tenantQuery, tenantWrite } from "@/src/tenancy/db";
+import { currentTenant } from "@/src/tenancy/tenant";
 import { cellSnapshots, latestDataRun, packageSnapshots } from "@/src/status/db";
 import type { CellSnapshot, CollectorRun, PackageSnapshot } from "@/src/status/types";
 import type { Statement } from "./commands";
@@ -9,7 +10,8 @@ type Row = Record<string, any>;
 export const registryConfigured = () => Boolean(process.env.CONSOLE_DATABASE_URL);
 export const registryWritable = () => Boolean(process.env.CONSOLE_ADMIN_DATABASE_URL);
 
-const read = (text: string): Promise<Row[]> => neon(process.env.CONSOLE_DATABASE_URL!).query(text) as Promise<Row[]>;
+/** Every registry read is scoped to the request's tenant; with no tenant the schema returns nothing (db/006). */
+const read = async (text: string): Promise<Row[]> => tenantQuery((await currentTenant()).id, text);
 
 /** The whole declared registry. It is small (projects, not telemetry), so one read per page beats per-entity queries. */
 export async function loadRegistry(): Promise<Registry> {
@@ -51,14 +53,10 @@ export async function loadObserved(): Promise<Observed> {
   return { run, packages, cells };
 }
 
-/** Applies statements in one transaction as console_admin. The actor is set first so the audit trigger records who made the change. */
+/** Applies statements in one transaction as console_admin, inside the request's tenant. The actor is set first so the audit trigger records who made the change. */
 export async function registryWrite(actor: string, statements: Statement[]): Promise<void> {
   if (!registryWritable()) throw new Error("CONSOLE_ADMIN_DATABASE_URL is not set.");
-  const sql = neon(process.env.CONSOLE_ADMIN_DATABASE_URL!);
-  await sql.transaction([
-    sql.query("select set_config('console.actor', $1, true)", [actor]),
-    ...statements.map((s) => sql.query(s.text, s.params)),
-  ]);
+  await tenantWrite((await currentTenant()).id, actor, statements);
 }
 
 export type AgentRun = { projectSlug: string; environment: string; package: string; fromVersion: string; toVersion: string; issueUrl: string; requestedBy: string; requestedAt: Date };

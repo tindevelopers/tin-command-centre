@@ -1,4 +1,5 @@
 -- DRAFT. Seed for the TIN Command Center registry. Review before applying; nothing here has been run on Neon.
+-- NOTE: written before db/006_tenants.sql. After 006, set app.tenant_id first and use ON CONFLICT (tenant_id, ...) targets. See docs/authority-model.md, "Tenants".
 -- Idempotent. Owners are not set: they are not in any repo, so each project will show "No owner assigned" until you assign one.
 -- Run as neondb_owner (or console_admin) in one transaction; every row is audited under the actor below.
 BEGIN;
