@@ -28,7 +28,7 @@ export default async function CollectorPage({ searchParams }: { searchParams: Pr
       {one("error") && <div className="mb-4"><Notice>{one("error")}</Notice></div>}
       {one("started") && (
         <div className="mb-4">
-          <Notice>Collection started. It takes a few minutes; reload this page to see the new run. <a className="underline" href={one("started")} target="_blank" rel="noreferrer">Watch it on GitHub</a></Notice>
+          <Notice>Collection started. It takes about a minute; reload this page to see the new run. <a className="underline" href={one("started")} target="_blank" rel="noreferrer">Watch it on GitHub</a></Notice>
         </div>
       )}
       {op.role === "admin" && collectionConfigured() && (
