@@ -59,6 +59,20 @@ export async function registryWrite(actor: string, statements: Statement[]): Pro
   await tenantWrite((await currentTenant()).id, actor, statements);
 }
 
+export type AuditEntry = { at: Date; actor: string; table: string; action: string; subject: string | null };
+
+/** The latest registry changes in this tenant, newest first. Empty if the audit table cannot be read, so the Overview still renders. */
+export async function loadRecentAudit(limit = 6): Promise<AuditEntry[]> {
+  try {
+    const rows = await read(`select at, actor, table_name, action,
+      coalesce(after->>'slug', before->>'slug', after->>'project_slug', before->>'project_slug', after->>'from_slug', before->>'from_slug', after->>'email', before->>'email') as subject
+      from registry_audit order by id desc limit ${Math.max(1, Math.min(50, Math.floor(limit)))}`);
+    return rows.map((r) => ({ at: new Date(r.at), actor: r.actor, table: r.table_name, action: r.action, subject: r.subject ?? null }));
+  } catch {
+    return [];
+  }
+}
+
 export type AgentRun = { projectSlug: string; environment: string; package: string; fromVersion: string; toVersion: string; issueUrl: string; requestedBy: string; requestedAt: Date };
 
 /** Recent "Fix with agent" hand-offs, newest first. Empty if the table has not been created yet, so Drift still renders. */
