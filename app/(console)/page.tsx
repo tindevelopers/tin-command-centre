@@ -3,21 +3,18 @@ import { bySeverity, computeDrift } from "@/src/registry/drift";
 import { loadObserved, loadRegistry, registryConfigured } from "@/src/registry/db";
 import { staleness, worst } from "@/src/status/rules";
 import type { Colour } from "@/src/status/types";
+import { agentConfigured } from "@/src/agent/github";
+import { registryWritable } from "@/src/registry/db";
+import { commandItems } from "@/src/status/command";
+import { collectionConfigured } from "@/src/status/collect";
 import { Findings } from "@/components/RegistryUi";
-import { Notice, PageHeading, StatusDot, fmt } from "@/components/StatusUi";
+import { CommandPanel, Hero, HowItWorks, WhereToGo } from "@/components/CommandCenter";
+import type { BoardRow } from "@/components/CommandCenter";
+import { Notice, PageHeading, fmt } from "@/components/StatusUi";
 import { signOut } from "../signin/actions";
+import { collectNow } from "./collector/actions";
 
 export const dynamic = "force-dynamic";
-
-function Tile({ label, value, hint, colour }: { label: string; value: string; hint?: string; colour?: Colour }) {
-  return (
-    <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-gray-800 dark:text-white/90">{value}</p>
-      {colour ? <div className="mt-1 text-sm"><StatusDot colour={colour} /></div> : hint ? <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p> : null}
-    </div>
-  );
-}
 
 export default async function OverviewPage() {
   const op = await requireOperator();
@@ -33,17 +30,22 @@ export default async function OverviewPage() {
   const active = reg.projects.filter((p) => p.lifecycle === "active").length;
   const age = staleness(observed.run?.finishedAt ?? null, new Date());
 
+  const overall = worst(findings.map((f) => f.colour).concat(observed.run ? [age] : ["red"]));
+  const red = count("red");
+  const amber = count("amber");
+  const rows: BoardRow[] = [
+    { label: "Collector freshness", hint: "Green under 26 h, amber to 50 h, red beyond", value: observed.run ? fmt(observed.run.finishedAt).slice(5, 16) : "none", colour: observed.run ? age : "red" },
+    { label: "Needs action", hint: "A pin behind what the collector sees, or a failing cell", value: String(red), colour: red > 0 ? "red" : "green" },
+    { label: "Needs attention", hint: "Not seen yet, or no owner", value: String(amber), colour: amber > 0 ? "amber" : "green" },
+    { label: "Active projects", hint: `${reg.projects.length} registered`, value: String(active), colour: "neutral" },
+  ];
+  const items = commandItems({ isAdmin: op.role === "admin", collectConfigured: collectionConfigured(), agentConfigured: agentConfigured(), registryWritable: registryWritable() });
+
   return (
     <div>
-      <PageHeading title="Overview" subtitle="What TIN runs, and whether it matches what was declared." />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile label="Active projects" value={String(active)} hint={`${reg.projects.length} registered`} />
-        <Tile label="Needs action" value={String(count("red"))} colour={count("red") > 0 ? "red" : "green"} />
-        <Tile label="Needs attention" value={String(count("amber"))} colour={count("amber") > 0 ? "amber" : "green"} />
-        <Tile label="Collector data" value={observed.run ? fmt(observed.run.finishedAt).slice(5, 16) : "none"} colour={observed.run ? age : "red"} />
-      </div>
+      <Hero overall={overall} email={op.email} role={op.role} rows={rows} onCollect={op.role === "admin" && collectionConfigured() ? collectNow : undefined} />
 
-      <h2 className="mb-3 mt-8 text-lg font-semibold text-gray-800 dark:text-white/90">Most urgent</h2>
+      <h2 className="mb-3 mt-12 text-lg font-semibold text-gray-800 dark:text-white/90">Most urgent</h2>
       {reg.projects.length === 0 ? (
         <Notice>No projects are registered yet. <a className="underline" href="/projects">Add the first one.</a></Notice>
       ) : attention.length === 0 ? (
@@ -54,6 +56,9 @@ export default async function OverviewPage() {
           <p className="mt-3 text-sm"><a className="underline" href="/drift">All {attention.length} findings</a> · overall {worst(findings.map((f) => f.colour))}</p>
         </>
       )}
+      <HowItWorks />
+      <WhereToGo />
+      <CommandPanel items={items} />
       {signOutForm}
     </div>
   );
