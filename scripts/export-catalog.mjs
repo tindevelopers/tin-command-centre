@@ -1,5 +1,5 @@
 // Writes the declared registry as a Backstage catalog: one YAML file per entity plus all.yaml (a Location).
-// Usage: CONSOLE_DATABASE_URL=... node --experimental-strip-types scripts/export-catalog.mjs [outDir]
+// Usage: CONSOLE_DATABASE_URL=... [CONSOLE_TENANT=tin] node --experimental-strip-types scripts/export-catalog.mjs [outDir]
 // Or, without a database: node --experimental-strip-types scripts/export-catalog.mjs [outDir] --from registry.json
 // The mapping lives in src/registry/catalog.ts so a later Backstage EntityProvider can call the same function in-process.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -15,7 +15,12 @@ async function loadFromDatabase() {
   const url = process.env.CONSOLE_DATABASE_URL;
   if (!url) throw new Error("Set CONSOLE_DATABASE_URL (read-only login) or pass --from registry.json.");
   const { neon } = await import("@neondatabase/serverless");
-  const q = (text) => neon(url).query(text);
+  const sql = neon(url);
+  // Tenant data is behind row-level security (db/006): resolve the tenant, then read inside a transaction that sets it.
+  const slug = process.env.CONSOLE_TENANT || "tin";
+  const [{ id: tenantId }] = await sql.query("select resolve_tenant($1) as id", [slug]);
+  if (!tenantId) throw new Error(`Unknown tenant "${slug}" (set CONSOLE_TENANT).`);
+  const q = async (text) => (await sql.transaction([sql.query("select set_config('app.tenant_id', $1, true)", [tenantId]), sql.query(text)]))[1];
   // Same shape as loadRegistry() in src/registry/db.ts; only the fields the export reads.
   const [projects, environments, assignments, relations, groups] = await Promise.all([
     q("select * from projects order by slug"),

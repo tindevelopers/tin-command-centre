@@ -1,4 +1,4 @@
--- TIN ops console status store (spec §4, plan T2). Idempotent: safe to apply twice.
+-- TIN Command Center status store (spec §4, plan T2). Idempotent: safe to apply twice.
 -- Roles are created here WITHOUT passwords and NOLOGIN. The owner enables login out of band:
 --   ALTER ROLE collector_writer LOGIN PASSWORD '...';  ALTER ROLE console_reader LOGIN PASSWORD '...';
 -- Create them through SQL, not the Neon console: console-created roles join neon_superuser.

@@ -8,20 +8,20 @@ export function statementsFor(c: Command): Statement[] {
     case "upsertProject":
       return [{
         text: `INSERT INTO projects (slug, name, kind, client, repo, lifecycle, notes, owner_project, path, owner_group, tier) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-               ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind, client = EXCLUDED.client,
+               ON CONFLICT (tenant_id, slug) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind, client = EXCLUDED.client,
                  repo = EXCLUDED.repo, lifecycle = EXCLUDED.lifecycle, notes = EXCLUDED.notes, owner_project = EXCLUDED.owner_project, path = EXCLUDED.path, owner_group = EXCLUDED.owner_group, tier = EXCLUDED.tier, updated_at = now()`,
         params: [c.slug, c.name, c.kind, c.client, c.repo, c.lifecycle, c.notes, c.ownerProject, c.path, c.ownerGroup, c.tier],
       }];
     case "upsertEnvironment":
       return [{
         text: `INSERT INTO environments (project_slug, name, cell, region, url) VALUES ($1,$2,$3,$4,$5)
-               ON CONFLICT (project_slug, name) DO UPDATE SET cell = EXCLUDED.cell, region = EXCLUDED.region, url = EXCLUDED.url`,
+               ON CONFLICT (tenant_id, project_slug, name) DO UPDATE SET cell = EXCLUDED.cell, region = EXCLUDED.region, url = EXCLUDED.url`,
         params: [c.slug, c.name, c.cell, c.region, c.url],
       }];
     case "setPin":
       return [{
         text: `INSERT INTO declared_pins (project_slug, environment, package, version) VALUES ($1,$2,$3,$4)
-               ON CONFLICT (project_slug, environment, package) DO UPDATE SET version = EXCLUDED.version`,
+               ON CONFLICT (tenant_id, project_slug, environment, package) DO UPDATE SET version = EXCLUDED.version`,
         params: [c.slug, c.environment, c.package, c.version],
       }];
     case "removePin":
@@ -29,14 +29,14 @@ export function statementsFor(c: Command): Statement[] {
     case "setAdoption":
       return [{
         text: `INSERT INTO boss_adoption (project_slug, environment, domain_mode) VALUES ($1,$2,$3)
-               ON CONFLICT (project_slug, environment) DO UPDATE SET domain_mode = EXCLUDED.domain_mode`,
+               ON CONFLICT (tenant_id, project_slug, environment) DO UPDATE SET domain_mode = EXCLUDED.domain_mode`,
         params: [c.slug, c.environment, c.domainMode],
       }];
     case "assign":
       // assigned_by is filled from the audited actor, not from form input.
       return [{
         text: `INSERT INTO assignments (project_slug, assignee, role, assigned_by) VALUES ($1,$2,$3, current_setting('console.actor'))
-               ON CONFLICT (project_slug, assignee, role) WHERE removed_at IS NULL DO NOTHING`,
+               ON CONFLICT (tenant_id, project_slug, assignee, role) WHERE removed_at IS NULL DO NOTHING`,
         params: [c.slug, c.assignee, c.role],
       }];
     case "unassign":

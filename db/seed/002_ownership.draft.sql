@@ -1,4 +1,5 @@
 -- DRAFT. Ownership and tiers for the 24 seeded projects (strategy 2026-10-12, M1 and M5). Review before applying.
+-- NOTE: written before db/006_tenants.sql. After 006, set app.tenant_id first and use ON CONFLICT (tenant_id, ...) targets. See docs/authority-model.md, "Tenants".
 -- Needs 005_catalog_shape.sql and 001_projects.draft.sql. Idempotent. Run as neondb_owner (or console_admin) in one
 -- transaction; every row is audited under the actor below. Change the actor to the person applying it.
 --

@@ -2,7 +2,7 @@
   "name": "tin-ops-console",
   "version": "0.1.0",
   "private": true,
-  "description": "TIN ops console: read-only status of hubs, packages, cells and keys (spec: shell-base-admin docs/specs/2026-10-03-tin-ops-console-design.md)",
+  "description": "TIN Command Center (formerly the TIN ops console): the registry of what TIN runs, who owns it and whether it has drifted (spec: shell-base-admin docs/specs/2026-10-03-tin-ops-console-design.md)",
   "engines": {
     "node": ">=22"
   },
