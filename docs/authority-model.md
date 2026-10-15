@@ -65,6 +65,16 @@ The registry is tenant-scoped (`db/006_tenants.sql`; design in the Programming K
 - **Seeds.** `db/seed/*.draft.sql` were written before `006` and have not been run. After `006` they need `app.tenant_id` set and `ON CONFLICT (tenant_id, ...)` targets.
 - **Catalog export.** `scripts/export-catalog.mjs` reads the tenant named by `CONSOLE_TENANT` (default `tin`).
 
+## Reported versus declared
+
+"Merged pin = deployed" is false: merging a pin bump changes the repo, not what runs (migrations and the worker rollout are still manual). So a project page with declared pins for `@tindevelopers/knowledge` or `@tindevelopers/knowledge-worker` shows a **Declared versus reported** section: the declared version next to the version the platform reported to BOSS, and a status.
+
+- **Source.** BOSS `GET /v1/reports`, read on the server with the console's own spoke key (`BOSS_API_URL`, `BOSS_REPORTS_KEY`, scope `boss.reports.read`; see `.env.example`). The key never reaches the browser. Reader and the single wire-to-internal mapping function: `src/boss/reports.ts`. Comparison: `src/boss/compare.ts`.
+- **Which reports apply.** The BOSS platform is the project's `client` (for example `konnect`), the environment is the declared environment name. The component is taken to be the project slug without the platform prefix (`konnect-knowledge-worker` is component `knowledge-worker`); if no such component reported the package, every component that did is compared and any disagreement counts as not deployed.
+- **Status.** Deployed (reported equals declared), **Not deployed** (reported differs), Not reported (BOSS has no report for that platform environment or package), Unavailable (BOSS not configured, unreachable, refused the key, timed out after 3 s, or answered with something that does not match the contract). Only Deployed means deployed; every other state fails closed.
+- **Validation.** Each field of the response is checked against the patterns BOSS enforces on `POST /v1/reports` before anything is displayed. One bad row rejects the whole response. Nothing BOSS sends is ever put into an error message.
+- **Not part of drift.** Drift compares declared with what the collector saw published; this compares declared with what is reported as running. They are separate on purpose.
+
 ## BOSS adoption removed (migration 007)
 
 The declared BOSS adoption mode (`boss_adoption`, `inprocess | shadow | remote`) is gone from the code: shadow and remote no longer exist, and what a platform actually runs is reported to BOSS and shown against the declared pins (see "Reported versus declared").

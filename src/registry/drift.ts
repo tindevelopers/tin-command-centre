@@ -18,7 +18,7 @@ export function compareVersions(a: Semver, b: Semver): -1 | 0 | 1 {
   return a.pre < b.pre ? -1 : 1;
 }
 
-const sameVersion = (a: string | null, b: string) => {
+export const sameVersion = (a: string | null, b: string) => {
   const pa = parseVersion(a), pb = parseVersion(b);
   return pa && pb ? compareVersions(pa, pb) === 0 : a === b;
 };
