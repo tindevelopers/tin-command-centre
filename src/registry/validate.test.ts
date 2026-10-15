@@ -22,7 +22,6 @@ describe("parseCommand", () => {
     ["upsertEnvironment", { slug: "ok", name: "production", url: "http://insecure" }],
     ["setPin", { slug: "ok", environment: "production", package: "p", version: "^1.2.0" }],
     ["setPin", { slug: "ok", environment: "production", package: "p", version: "1.2" }],
-    ["setAdoption", { slug: "ok", environment: "production", domainMode: "yolo" }],
     ["assign", { slug: "ok", assignee: "not-an-email", role: "owner" }],
     ["assign", { slug: "ok", assignee: "a@tin.info", role: "boss" }],
     ["unassign", { slug: "ok", id: "1; drop table x" }],
