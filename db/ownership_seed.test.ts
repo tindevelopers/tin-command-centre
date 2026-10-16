@@ -31,7 +31,7 @@ describe("ownership seed draft", () => {
     const registry: Registry = {
       projects: (await rows("select * from projects order by slug")).map((r) => ({ slug: r.slug, name: r.name, kind: r.kind, client: r.client, repo: r.repo, lifecycle: r.lifecycle, notes: r.notes, ownerProject: r.owner_project, path: r.path, ownerGroup: r.owner_group, tier: r.tier, annotations: r.annotations })),
       environments: (await rows("select * from environments")).map((r) => ({ projectSlug: r.project_slug, name: r.name, cell: r.cell, region: r.region, url: r.url })),
-      pins: [], adoption: [], assignments: [],
+      pins: [], assignments: [],
       relations: (await rows("select * from project_relations")).map((r) => ({ fromSlug: r.from_slug, toSlug: r.to_slug, relation: r.relation })),
     };
     const groups = (await rows("select slug, name, parent from groups order by slug")).map((r) => ({ slug: r.slug, name: r.name, parent: r.parent }));

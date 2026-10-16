@@ -5,7 +5,7 @@ import type { Finding, Project, Registry } from "./types";
 const p = (slug: string, kind: Project["kind"], lifecycle: Project["lifecycle"] = "active"): Project =>
   ({ slug, name: slug, kind, client: null, repo: null, lifecycle, notes: null, ownerProject: null, path: null, ownerGroup: null, tier: null, annotations: {} });
 const f = (projectSlug: string, colour: Finding["colour"]): Finding => ({ projectSlug, environment: null, kind: "pin", subject: "x", colour, message: "m" });
-const reg = (projects: Project[]): Registry => ({ projects, environments: [], pins: [], adoption: [], assignments: [], relations: [] });
+const reg = (projects: Project[]): Registry => ({ projects, environments: [], pins: [], assignments: [], relations: [] });
 
 describe("estateByKind", () => {
   const r = reg([p("a", "hub"), p("b", "hub"), p("c", "app"), p("d", "app", "retired"), p("e", "boss", "planned")]);

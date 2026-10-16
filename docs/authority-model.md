@@ -10,26 +10,26 @@
 |---|---|---|
 | C3 | Read-only; links out instead of acting | **Superseded.** The console is the system of record for what TIN runs, who owns it and what it should look like. |
 | C4 | Only the collector writes; the console reads | The collector still writes **observed** state. Admins write **declared** state through the console. Neither overwrites the other. |
-| Section 1 "Not in scope" | No assigning or changing anything | Assigning owners, declaring versions and declaring BOSS adoption modes are in scope. Rotating keys, publishing packages and deploying cells are still not done from the console. |
+| Section 1 "Not in scope" | No assigning or changing anything | Assigning owners, and declaring versions are in scope. Rotating keys, publishing packages and deploying cells are still not done from the console. |
 
 Unchanged: C1 (own repo), C2 (Neon, EU), C5 (key metadata only, never secrets), C6 (Neon Auth, closed sign-up, `console_operators` allow-list), C7 (ui-shell structure).
 
 ## Declared versus observed
 
-- **Declared** (authoritative, edited by admins): `projects`, `project_relations`, `environments`, `declared_pins`, `boss_adoption`, `assignments`.
+- **Declared** (authoritative, edited by admins): `projects`, `project_relations`, `environments`, `declared_pins`, `assignments`.
 - **Observed** (measured by the collector): `package_snapshots`, `cell_snapshots`, `credential_snapshots`.
 - **Drift is the difference.** A project declared on `@tindevelopers/ui-shell@1.2.0` while the collector sees `1.1.0` is red. Observed state never edits the declaration.
 
 ## What it tracks
 
-`projects.kind` covers `boss`, `hub`, `spoke`, `package`, `shell-base` and `app`. `project_relations` links them (`consumes`, `calls`, `hosts`), for example an app consumes a hub, a spoke calls BOSS. Each project has environments (`development`, `staging`, `production`), declared package pins per environment, a declared BOSS `DOMAIN_MODE` (`inprocess`, `shadow`, `remote`) and owners.
+`projects.kind` covers `boss`, `hub`, `spoke`, `package`, `shell-base` and `app`. `project_relations` links them (`consumes`, `calls`, `hosts`), for example an app consumes a hub, a spoke calls BOSS. Each project has environments (`development`, `staging`, `production`), declared package pins per environment and owners.
 
 ## Access and audit
 
 - Roles: `console_reader` (SELECT), `console_admin` (writes the registry, cannot touch snapshots), `collector_writer` (snapshots only, no registry access).
 - `console_operators.role` is now `viewer` or `admin`. Only admins reach the write path.
 - Every change to a registry table or to `console_operators` is recorded in `registry_audit` by a database trigger, with actor, before and after. The console must run `SELECT set_config('console.actor', <email>, true)` in the same transaction as each write; a write without an actor is refused. No role can edit or delete audit rows.
-- Retiring replaces deleting: projects, environments and assignments cannot be deleted (`lifecycle = 'retired'`, `removed_at`). Relations, pins and adoption modes can be removed.
+- Retiring replaces deleting: projects, environments and assignments cannot be deleted (`lifecycle = 'retired'`, `removed_at`). Relations and pins can be removed.
 
 ## Built
 
@@ -64,6 +64,25 @@ The registry is tenant-scoped (`db/006_tenants.sql`; design in the Programming K
 - **Rollout order.** Deploy this code first, then apply `db/006_tenants.sql` straight away. Before 006 the code still reads the registry (it finds no `resolve_tenant()` and runs unscoped), but registry writes need 006. Applying 006 first would leave the old code reading an empty registry. Try 006 on a Neon branch first.
 - **Seeds.** `db/seed/*.draft.sql` were written before `006` and have not been run. After `006` they need `app.tenant_id` set and `ON CONFLICT (tenant_id, ...)` targets.
 - **Catalog export.** `scripts/export-catalog.mjs` reads the tenant named by `CONSOLE_TENANT` (default `tin`).
+
+## Reported versus declared
+
+"Merged pin = deployed" is false: merging a pin bump changes the repo, not what runs (migrations and the worker rollout are still manual). So a project page with declared pins for `@tindevelopers/knowledge` or `@tindevelopers/knowledge-worker` shows a **Declared versus reported** section: the declared version next to the version the platform reported to BOSS, and a status.
+
+- **Source.** BOSS `GET /v1/reports`, read on the server with the console's own spoke key (`BOSS_API_URL`, `BOSS_REPORTS_KEY`, scope `boss.reports.read`; see `.env.example`). The key never reaches the browser. Reader and the single wire-to-internal mapping function: `src/boss/reports.ts`. Comparison: `src/boss/compare.ts`.
+- **Which reports apply.** The BOSS platform is the project's `client` (for example `konnect`), the environment is the declared environment name. The component is taken to be the project slug without the platform prefix (`konnect-knowledge-worker` is component `knowledge-worker`); if no such component reported the package, every component that did is compared and any disagreement counts as not deployed.
+- **Status.** Deployed (reported equals declared), **Not deployed** (reported differs), Not reported (BOSS has no report for that platform environment or package), Unavailable (BOSS not configured, unreachable, refused the key, timed out after 3 s, or answered with something that does not match the contract). Only Deployed means deployed; every other state fails closed.
+- **Validation.** Each field of the response is checked against the patterns BOSS enforces on `POST /v1/reports` before anything is displayed. One bad row rejects the whole response. Nothing BOSS sends is ever put into an error message.
+- **Not part of drift.** Drift compares declared with what the collector saw published; this compares declared with what is reported as running. They are separate on purpose.
+
+## BOSS adoption removed (migration 007)
+
+The declared BOSS adoption mode (`boss_adoption`, `inprocess | shadow | remote`) is gone from the code: shadow and remote no longer exist, and what a platform actually runs is reported to BOSS and shown against the declared pins (see "Reported versus declared").
+
+- **`db/007_drop_boss_adoption.sql` is destructive and needs the owner's yes before it is applied.** It drops the table and its rows. It is a new forward file because 002 and 006 have already been applied; they still mention the table and are left as they ran.
+- **Rollout order.** Deploy this code first (it no longer reads or writes the table), then apply 007 on a Neon branch, then on the main branch after the owner's yes. Applying 007 first would break the previous release, which reads `boss_adoption` on every registry page.
+- `registry_audit` keeps its old `boss_adoption` rows. It is append-only history.
+- Do not re-run 006 alone after 007: it still names the table. Apply 001 to 007 in order on a fresh database.
 
 ## Still to build
 

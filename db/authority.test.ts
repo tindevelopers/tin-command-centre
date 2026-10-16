@@ -4,7 +4,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, describe, expect, it } from "vitest";
 
 const read = (f: string) => readFileSync(join(__dirname, f), "utf8");
-const REGISTRY = ["projects", "project_relations", "environments", "declared_pins", "boss_adoption", "assignments", "registry_audit"];
+const REGISTRY = ["projects", "project_relations", "environments", "declared_pins", "assignments", "registry_audit"];
 
 let db: PGlite;
 
@@ -42,19 +42,17 @@ beforeAll(async () => {
 });
 
 describe("registry writes", () => {
-  it("lets an admin register a project, its relations, pins, adoption mode and owner", async () => {
+  it("lets an admin register a project, its relations, pins and owner", async () => {
     await adminTx(`
       INSERT INTO project_relations VALUES ('konnect', 'shared-api-hub', 'consumes'), ('konnect', 'boss', 'calls');
       INSERT INTO declared_pins VALUES ('konnect', 'development', '@tindevelopers/ui-shell', '1.2.0');
-      INSERT INTO boss_adoption VALUES ('konnect', 'development', 'shadow');
       INSERT INTO assignments (project_slug, assignee, assigned_by) VALUES ('konnect', 'a@tin.info', 'gene@tin.info')`);
     const r = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM declared_pins");
     expect(r.rows[0].n).toBe(1);
   });
 
-  it("refuses an unknown kind, domain mode or environment", async () => {
+  it("refuses an unknown kind or environment", async () => {
     await expect(adminTx("INSERT INTO projects (slug, name, kind) VALUES ('x', 'X', 'wizard')")).rejects.toThrow(/check/i);
-    await expect(adminTx("UPDATE boss_adoption SET domain_mode = 'yolo'")).rejects.toThrow(/check/i);
     await expect(adminTx("INSERT INTO environments VALUES ('konnect', 'qa')")).rejects.toThrow(/check/i);
   });
 

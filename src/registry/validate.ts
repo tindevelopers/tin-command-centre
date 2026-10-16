@@ -1,5 +1,5 @@
-import { ASSIGN_ROLES, DOMAIN_MODES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS, TIERS } from "./types";
-import type { AssignRole, DomainMode, EnvName, Kind, Lifecycle, Relation, Tier } from "./types";
+import { ASSIGN_ROLES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS, TIERS } from "./types";
+import type { AssignRole, EnvName, Kind, Lifecycle, Relation, Tier } from "./types";
 
 /** A message that is safe to show the operator. Anything else is reported generically. */
 export class ValidationError extends Error {}
@@ -9,7 +9,6 @@ export type Command =
   | { type: "upsertEnvironment"; slug: string; name: EnvName; cell: string | null; region: string | null; url: string | null }
   | { type: "setPin"; slug: string; environment: EnvName; package: string; version: string }
   | { type: "removePin"; slug: string; environment: EnvName; package: string }
-  | { type: "setAdoption"; slug: string; environment: EnvName; domainMode: DomainMode }
   | { type: "assign"; slug: string; assignee: string; role: AssignRole }
   | { type: "unassign"; slug: string; id: string }
   | { type: "addRelation"; slug: string; to: string; relation: Relation }
@@ -72,8 +71,6 @@ export function parseCommand(type: Command["type"], f: Form): Command {
       return { type, slug: slug(f), environment: oneOf(f, "environment", ENV_NAMES, "Environment"), package: required(f, "package", "Package"), version: exactVersion(f, "version") };
     case "removePin":
       return { type, slug: slug(f), environment: oneOf(f, "environment", ENV_NAMES, "Environment"), package: required(f, "package", "Package") };
-    case "setAdoption":
-      return { type, slug: slug(f), environment: oneOf(f, "environment", ENV_NAMES, "Environment"), domainMode: oneOf(f, "domainMode", DOMAIN_MODES, "Mode") };
     case "assign":
       return { type, slug: slug(f), assignee: email(f, "assignee"), role: oneOf(f, "role", ASSIGN_ROLES, "Role") };
     case "unassign": {

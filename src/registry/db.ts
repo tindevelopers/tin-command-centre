@@ -15,11 +15,10 @@ const read = async (text: string): Promise<Row[]> => tenantQuery((await currentT
 
 /** The whole declared registry. It is small (projects, not telemetry), so one read per page beats per-entity queries. */
 export async function loadRegistry(): Promise<Registry> {
-  const [projects, environments, pins, adoption, assignments, relations] = await Promise.all([
+  const [projects, environments, pins, assignments, relations] = await Promise.all([
     read("select * from projects order by slug"),
     read("select * from environments order by project_slug, name"),
     read("select * from declared_pins order by project_slug, environment, package"),
-    read("select * from boss_adoption"),
     read("select * from assignments where removed_at is null order by assigned_at"),
     read("select * from project_relations order by from_slug, to_slug"),
   ]);
@@ -27,7 +26,6 @@ export async function loadRegistry(): Promise<Registry> {
     projects: projects.map((r) => ({ slug: r.slug, name: r.name, kind: r.kind, client: r.client, repo: r.repo, lifecycle: r.lifecycle, notes: r.notes, ownerProject: r.owner_project ?? null, path: r.path ?? null, ownerGroup: r.owner_group ?? null, tier: r.tier ?? null, annotations: r.annotations ?? {} })),
     environments: environments.map((r) => ({ projectSlug: r.project_slug, name: r.name, cell: r.cell, region: r.region, url: r.url })),
     pins: pins.map((r) => ({ projectSlug: r.project_slug, environment: r.environment, package: r.package, version: r.version })),
-    adoption: adoption.map((r) => ({ projectSlug: r.project_slug, environment: r.environment, domainMode: r.domain_mode })),
     assignments: assignments.map((r) => ({ id: String(r.id), projectSlug: r.project_slug, assignee: r.assignee, role: r.role, assignedBy: r.assigned_by, assignedAt: new Date(r.assigned_at) })),
     relations: relations.map((r) => ({ fromSlug: r.from_slug, toSlug: r.to_slug, relation: r.relation })),
   };
