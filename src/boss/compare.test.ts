@@ -5,6 +5,7 @@ import type { BossReport, ReportsResult } from "./reports";
 
 const KNOWLEDGE = "@tindevelopers/knowledge";
 const WORKER = "@tindevelopers/knowledge-worker";
+const CRYPTO = "@tindevelopers/credential-crypto";
 
 const project = (over: Partial<Project> = {}): Project => ({ slug: "konnect-knowledge-worker", name: "Konnect knowledge worker", kind: "app", client: "konnect", repo: null, lifecycle: "active", notes: null, ownerProject: null, path: null, ownerGroup: null, tier: null, annotations: {}, ...over });
 const pin = (over: Partial<Pin> = {}): Pin => ({ projectSlug: "konnect-knowledge-worker", environment: "staging", package: KNOWLEDGE, version: "0.4.2", ...over });
@@ -14,8 +15,17 @@ const ok = (...reports: BossReport[]): ReportsResult => ({ status: "ok", reports
 const compare = (pins: Pin[], result: ReportsResult, projects: Project[] = [project()]) => compareReported({ projects, pins }, result);
 
 describe("compareReported", () => {
-  it("watches knowledge and knowledge-worker", () => {
-    expect([...WATCHED_PACKAGES]).toEqual([KNOWLEDGE, WORKER]);
+  it("watches knowledge, knowledge-worker and credential-crypto", () => {
+    expect([...WATCHED_PACKAGES]).toEqual([KNOWLEDGE, WORKER, CRYPTO]);
+  });
+
+  it("pawpointers: a component named exactly like the slug is the one compared, not other components", () => {
+    const dash = project({ slug: "pawpointers-dashboard", name: "PawPointers dashboard", client: "pawpointers" });
+    const p = pin({ projectSlug: "pawpointers-dashboard", environment: "production", package: CRYPTO, version: "1.0.0" });
+    const r = (component: string, version: string) => report({ platform: "pawpointers", environment: "production", component, versions: { [CRYPTO]: version } });
+    const [c] = compare([p], ok(r("pawpointers-dashboard", "1.0.0"), r("pawpointers-admin", "0.9.0")), [dash]);
+    expect(c).toMatchObject({ platform: "pawpointers", state: "deployed" });
+    expect(c.reported.map((x) => x.component)).toEqual(["pawpointers-dashboard"]);
   });
 
   it("match: the reported version equals the declared pin, so it is deployed", () => {
