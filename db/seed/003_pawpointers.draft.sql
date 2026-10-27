@@ -1,4 +1,4 @@
--- DRAFT. Registers PawPointers, the first spoke that reports to BOSS. Review before applying; nothing here has been run on Neon.
+-- Registers PawPointers, the first spoke that reports to BOSS. Applied to the console Neon (production branch) on 2026-10-27.
 -- Written for the schema after db/007: rows belong to tenant 'tin' and conflict targets include tenant_id.
 -- Idempotent. Run as neondb_owner in one transaction; every row is audited under the actor below.
 -- Environments are development, staging and production only (no preview keys). Only the dashboard reports (component
@@ -8,11 +8,14 @@ BEGIN;
 select set_config('console.actor', 'developer@tin.info', true);
 select set_config('app.tenant_id', (select id::text from tenants where slug = 'tin'), true);
 
-insert into projects (slug, name, kind, client, repo, lifecycle, notes, path, tier) values
-  ('pawpointers-listing-paas', 'PawPointers listing platform', 'spoke', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'Client monorepo (admin, portal, dashboard); first spoke that reports to BOSS. Cell: tin-production.', null, null),
-  ('pawpointers-dashboard', 'PawPointers dashboard', 'app', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'Reports to BOSS every 10 minutes as component pawpointers-dashboard.', 'apps/dashboard', 'product'),
-  ('pawpointers-admin', 'PawPointers admin', 'app', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'No BOSS reporter yet.', 'apps/admin', 'product'),
-  ('pawpointers-portal', 'PawPointers portal', 'app', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'No BOSS reporter yet.', 'apps/portal', 'product')
+-- Ownership as Konnect has it (seed 002): the monorepo owns itself and its apps, and only the root carries a group.
+insert into groups (slug, name, parent) values ('pawpointers', 'PawPointers', null) on conflict do nothing;
+
+insert into projects (slug, name, kind, client, repo, lifecycle, notes, path, tier, owner_project, owner_group) values
+  ('pawpointers-listing-paas', 'PawPointers listing platform', 'spoke', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'Client monorepo (admin, portal, dashboard); first spoke that reports to BOSS. Cell: tin-production.', null, 'product', 'pawpointers-listing-paas', 'pawpointers'),
+  ('pawpointers-dashboard', 'PawPointers dashboard', 'app', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'Reports to BOSS every 10 minutes as component pawpointers-dashboard.', 'apps/dashboard', 'product', 'pawpointers-listing-paas', null),
+  ('pawpointers-admin', 'PawPointers admin', 'app', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'No BOSS reporter yet.', 'apps/admin', 'product', 'pawpointers-listing-paas', null),
+  ('pawpointers-portal', 'PawPointers portal', 'app', 'pawpointers', 'tindevelopers/pawpointers-listing-paas', 'active', 'No BOSS reporter yet.', 'apps/portal', 'product', 'pawpointers-listing-paas', null)
 on conflict (tenant_id, slug) do nothing;
 
 insert into environments (project_slug, name, cell, region, url) values

@@ -23,7 +23,12 @@ describe("pawpointers seed draft", () => {
     for (const [t, n] of Object.entries(tables)) expect(await count(db, `select count(*)::int n from ${t}`), t).toBe(n);
     expect(await count(db, "select count(*)::int n from projects where tenant_id <> (select id from tenants where slug = 'tin')")).toBe(0);
     expect(await count(db, "select count(*)::int n from environments where name not in ('development','staging','production')")).toBe(0);
-    expect(await count(db, "select count(*)::int n from registry_audit where actor = 'developer@tin.info'")).toBe(13);
+    expect(await count(db, "select count(*)::int n from registry_audit where actor = 'developer@tin.info'")).toBe(14); // 13 rows + the group
+    // Owned like Konnect: the monorepo owns itself and its apps; only the root has the group.
+    const owners = await db.query<{ slug: string; owner_project: string; owner_group: string | null }>(
+      "select slug, owner_project, owner_group from projects order by slug");
+    expect(owners.rows.every((r) => r.owner_project === "pawpointers-listing-paas")).toBe(true);
+    expect(owners.rows.filter((r) => r.owner_group).map((r) => [r.slug, r.owner_group])).toEqual([["pawpointers-listing-paas", "pawpointers"]]);
   }, 60_000);
 
   it("links the hubs and BOSS when they are already registered", async () => {
