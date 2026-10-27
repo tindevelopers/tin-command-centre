@@ -13,8 +13,11 @@ import type { BossReport, ReportHealth, ReportsResult } from "./reports";
  * this asks "is the pin what is actually running".
  */
 
-/** The packages whose rollout is manual today (migrations and the worker image), so they are the ones worth proving. */
-export const WATCHED_PACKAGES = ["@tindevelopers/knowledge", "@tindevelopers/knowledge-worker"] as const;
+/**
+ * The packages worth proving: knowledge and knowledge-worker roll out manually (migrations and the worker image), and
+ * credential-crypto is the hub package the PawPointers dashboard reports (its first reporting spoke).
+ */
+export const WATCHED_PACKAGES = ["@tindevelopers/knowledge", "@tindevelopers/knowledge-worker", "@tindevelopers/credential-crypto"] as const;
 const WATCHED = new Set<string>(WATCHED_PACKAGES);
 
 export type DeployState = "deployed" | "not-deployed" | "not-reported" | "unavailable";
@@ -45,7 +48,8 @@ export function needsReports(project: Pick<Project, "slug" | "client" | "lifecyc
 
 /**
  * BOSS names a report by component. The component for `konnect-knowledge-worker` on platform `konnect` is taken to be `knowledge-worker`
- * (the slug without the platform prefix). If no such component reported the package, every component that did is considered.
+ * (the slug without the platform prefix); a component named exactly like the slug (`pawpointers-dashboard`) also matches. If no such
+ * component reported the package, every component that did is considered.
  */
 const componentHint = (slug: string, platform: string) => (slug.startsWith(`${platform}-`) ? slug.slice(platform.length + 1) : slug);
 
@@ -75,7 +79,7 @@ export function compareReported(scope: Scope, result: ReportsResult): PinCompari
       continue;
     }
     const hint = componentHint(pin.projectSlug, platform);
-    const named = reporters.filter((r) => r.component === hint);
+    const named = reporters.filter((r) => r.component === hint || r.component === pin.projectSlug);
     if (named.length > 0) reporters = named;
 
     const reported = reporters.map((r: BossReport) => ({ component: r.component, version: r.versions[pin.package], health: r.health, reportedAt: r.reportedAt }));
