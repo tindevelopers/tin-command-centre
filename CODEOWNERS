@@ -1,0 +1,28 @@
+# CODEOWNERS — review routing for tindevelopers/tin-command-centre (task W1-04).
+# Single owner: no second human has write access to this repository (owner decision, 2026-10-29).
+# GitHub does not ask a PR author to review their own PR, so a second owner is still required for the CI,
+# test and migration lines once W1-30's rulesets enforce code-owner review; see the PR body for the owner action.
+
+*                               @tin-wizard
+
+# CI, release and repository configuration
+/.github/                       @tin-wizard
+/release-targets.json           @tin-wizard
+/.changeset/config.json         @tin-wizard
+/renovate.json                  @tin-wizard
+/CODEOWNERS                     @tin-wizard
+
+# Tests and the checks that keep agents honest
+/tests/                         @tin-wizard
+**/*.test.ts                    @tin-wizard
+**/*.spec.ts                    @tin-wizard
+/.dependency-cruiser.cjs        @tin-wizard
+/eslint.config.*                @tin-wizard
+/vitest.config.*                @tin-wizard
+
+# Database and public API
+**/migrations/                  @tin-wizard
+/db/                            @tin-wizard
+**/api/*.api.md                 @tin-wizard
+/openapi.json                   @tin-wizard
+/cells/                         @tin-wizard

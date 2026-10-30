@@ -19,7 +19,10 @@ describe("tenancy db helpers", () => {
       expect(connectionFor("t", "reader")).toBe("postgres://reader");
       expect(connectionFor("t", "admin")).toBe("postgres://admin");
     } finally {
-      for (const [k, v] of [["CONSOLE_DATABASE_URL", saved.r], ["CONSOLE_ADMIN_DATABASE_URL", saved.a]] as const) v === undefined ? delete process.env[k] : (process.env[k] = v);
+      for (const [k, v] of [["CONSOLE_DATABASE_URL", saved.r], ["CONSOLE_ADMIN_DATABASE_URL", saved.a]] as const) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
     }
   });
 });
