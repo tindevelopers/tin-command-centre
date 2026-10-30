@@ -22,6 +22,7 @@
 
 # Database and public API
 **/migrations/                  @tin-wizard
+/db/                            @tin-wizard
 **/api/*.api.md                 @tin-wizard
 /openapi.json                   @tin-wizard
 /cells/                         @tin-wizard
