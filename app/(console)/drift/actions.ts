@@ -12,7 +12,7 @@ import { pinFinding } from "@/src/registry/drift";
 export async function fixWithAgent(f: FormData) {
   const admin = await requireAdmin();
   const [project, environment, pkg] = ["project", "environment", "package"].map((k) => String(f.get(k) ?? ""));
-  let result = "";
+  let result: string;
   try {
     const [reg, observed] = await Promise.all([loadRegistry(), loadObserved()]);
     const pin = reg.pins.find((p) => p.projectSlug === project && p.environment === environment && p.package === pkg);
