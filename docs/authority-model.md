@@ -103,6 +103,17 @@ The keys page the spec reserved for phase 2 (C5: metadata only, never secrets), 
 - **What it does not do.** Mint or rotate: those stay the owner's CLI. Read a cell live: nothing on this page talks to BOSS. Until the collector's writer for `api-credentials` is enabled the table is empty and the page says so; the scope matrix stands on its own.
 - Tests: `src/credentials/view.test.ts`.
 
+## Pin proposals (phase 2, 2026-11-01)
+
+Step 4 of the build order. The console now proposes, BOSS records, platforms pull (BOSS-8): nothing here touches a platform repository.
+
+- **Drafts** (`/boss/proposals`, `src/boss/drafts.ts`) are derived, never stored: one per (platform, environment) from the registry's `latest` pins that are behind the hub's published version, merged per package, worst bump first, chunked to BOSS's limit of 10 pins. A draft whose pin set equals the newest sent proposal for that key is marked already sent and cannot be sent again.
+- **Sending** (`app/(console)/boss/proposals/actions.ts`, `src/boss/propose.ts`) is autonomy class A1: an admin presses the button, every time. The form names only the draft; the pins are re-derived server-side, so a stale form cannot send anything the registry does not say. `POST /v1/pin-proposals` carries two credentials, both server-only: the console's operator spoke key (`BOSS_OPERATOR_KEY`, scope `boss.pins.write`) and the signed-in person's Neon Auth JWT (`src/auth/token.ts`, from Neon Auth's `/token`). BOSS also requires that person on its operator list, so a 403 reads "not on its operator list". No credential and nothing BOSS returns is logged, stored or interpolated; failures are fixed strings.
+- **Record** (`db/009_pin_proposals.sql`): the console cannot read proposals back from BOSS (`GET /v1/pin-proposals/latest` is platform-scope), so it keeps its own append-only, tenant-isolated, audited record of what it sent, with BOSS's id. A send that BOSS accepted but the console could not record is reported as such; BOSS stays the authority.
+- **Deployed state** is derived from BOSS reports: deployed, partly, not deployed, or not reported. Canary and PR-open stages are shown as not yet wired; they wait on the agent-run and PR signals (steps 5 and 6).
+- **Rollout.** Deploy the code first (the page says "db/009 not applied" until then), apply 009 on a Neon branch and then on main, mint a console operator key on BOSS and set `BOSS_OPERATOR_KEY`, and add the sending admins to BOSS's operator list.
+- Tests: `db/pin_proposals.test.ts`, `src/boss/drafts.test.ts`, `src/boss/propose.test.ts`.
+
 ## Still to build
 
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.

@@ -21,7 +21,7 @@ export const consoleNavigation: {
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
     { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
     { name: "Consumers and keys", path: "/keys", icon: icon(LockIcon) },
-    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }] },
+    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
   ],
   support: [],
