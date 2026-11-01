@@ -1,5 +1,5 @@
 import React from "react";
-import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon } from "@tindevelopers/ui-shell/icons";
+import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon, LockIcon } from "@tindevelopers/ui-shell/icons";
 import type { ShellNavItem } from "@tindevelopers/ui-shell";
 
 const icon = (C: React.ComponentType) => React.createElement(C);
@@ -7,7 +7,7 @@ const icon = (C: React.ComponentType) => React.createElement(C);
 /**
  * TIN Control Plane navigation (spec C7), in the order of the 2026-11-01 interface strategy: the estate first, then BOSS.
  * The shared sidebar has three fixed sections with fixed headings, so BOSS is a submenu rather than a titled group; a page
- * is listed only once it exists. Consumers and keys (T13) and Tenants arrive with their pages.
+ * is listed only once it exists. Tenants arrives with its page.
  */
 export const consoleNavigation: {
   main: ShellNavItem[];
@@ -20,6 +20,7 @@ export const consoleNavigation: {
     { name: "Hubs and packages", path: "/packages", icon: icon(BoxIcon) },
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
     { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
+    { name: "Consumers and keys", path: "/keys", icon: icon(LockIcon) },
     { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
   ],
