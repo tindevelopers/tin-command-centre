@@ -2,8 +2,11 @@ import Link from "next/link";
 import { currentOperator, requireOperator } from "@/src/auth/access";
 import { buildDrafts, deployedState } from "@/src/boss/drafts";
 import type { DeployedState, Draft, SentProposal } from "@/src/boss/drafts";
+import { MAX_REPOS, describePlatformUnavailable, issueRef, platformRepos, pullForProposal, pullForRun, readPlatformSignals } from "@/src/boss/platform";
+import type { AgentPull, CheckState, PinBumpPull, PullState } from "@/src/boss/platform";
 import { readReports } from "@/src/boss/reports";
 import { loadAgentRuns, loadObserved, loadPinProposals, loadRegistry, registryConfigured, registryWritable } from "@/src/registry/db";
+import type { AgentRun } from "@/src/registry/db";
 import { ageLabel } from "@/src/status/format";
 import { currentTenant } from "@/src/tenancy/tenant";
 import { EmptyRow, PageHeader, Panel, StatusChip, buttonPrimary } from "@/components/ControlPlane";
@@ -18,6 +21,22 @@ const BUMP: Record<Draft["bump"], { colour: "red" | "amber" | "green"; label: st
 const DEPLOYED: Record<DeployedState, { colour: "green" | "amber" | "red"; label: string }> = {
   deployed: { colour: "green", label: "deployed" }, partly: { colour: "amber", label: "partly deployed" }, "not-deployed": { colour: "red", label: "not deployed" }, "not-reported": { colour: "amber", label: "not reported" },
 };
+const CHECKS: Record<CheckState, { colour: "green" | "amber" | "red" | null; label: string }> = {
+  green: { colour: "green", label: "checks green" }, red: { colour: "red", label: "checks red" }, pending: { colour: "amber", label: "checks running" }, none: { colour: null, label: "no checks" },
+};
+const PULL: Record<PullState, string> = { open: "open", merged: "merged", closed: "closed, not merged" };
+
+function PullChip({ p }: { p: { url: string; number: number; state: PullState; draft: boolean; checks: CheckState } | null }) {
+  if (!p) return <span className="text-xs text-gray-500 dark:text-gray-400">none yet</span>;
+  const c = CHECKS[p.checks];
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <a href={p.url} target="_blank" rel="noreferrer noopener" className={`${mono} underline`}>#{p.number}</a>
+      <span className={neutral}>{p.state === "open" && p.draft ? "draft" : PULL[p.state]}</span>
+      {p.state !== "closed" && (c.colour ? <StatusChip colour={c.colour} label={c.label} /> : <span className={neutral}>{c.label}</span>)}
+    </span>
+  );
+}
 
 function Stage({ label, value, note, accent = false }: { label: string; value: string | number; note: string; accent?: boolean }) {
   return (
@@ -45,8 +64,23 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
   const sendable = drafts.filter((d) => !d.alreadySent);
   const canSend = op?.role === "admin" && registryWritable() && Boolean(process.env.BOSS_OPERATOR_KEY?.trim()) && Boolean(process.env.BOSS_API_URL?.trim());
   const reported = reports.status === "ok" ? reports.reports : [];
-  const history = (sent ?? []).map((s) => ({ ...s, state: reports.status === "ok" ? deployedState(s, reported) : ("not-reported" as const) }));
+
+  // Platform signals: only repositories the registry names are read. Platform repos for pin-bump PRs; the repos of recorded hand-off
+  // issues (always registry projects, by construction of "Fix with agent") for agent PRs.
+  const platforms = new Set(reg.projects.map((p) => p.client).filter((c): c is string => Boolean(c)));
+  const registryRepos = new Set(reg.projects.map((p) => p.repo).filter((r): r is string => Boolean(r)));
+  const runRepos = agentRuns.map((r) => issueRef(r.issueUrl)?.repo).filter((r): r is string => Boolean(r) && registryRepos.has(r!));
+  const repos = [...new Set([...platformRepos(reg.projects, platforms), ...runRepos])].slice(0, MAX_REPOS);
+  const signals = await readPlatformSignals(repos, agentRuns);
+  const pinBumps: PinBumpPull[] = signals.status === "ok" ? signals.pinBumps : [];
+  const agentPulls: AgentPull[] = signals.status === "ok" ? signals.agentPulls : [];
+  const openBumps = pinBumps.filter((p) => p.state === "open");
+  const greenBumps = pinBumps.filter((p) => p.state !== "closed" && p.checks === "green");
+  const runsWithPull = agentRuns.filter((r) => pullForRun(r, agentPulls)).length;
+
+  const history = (sent ?? []).map((s) => ({ ...s, state: reports.status === "ok" ? deployedState(s, reported) : ("not-reported" as const), pull: pullForProposal(s, pinBumps) }));
   const deployed = history.filter((h) => h.state === "deployed").length;
+  const sentIds = new Set((sent ?? []).map((s) => s.bossId));
   const one = (k: string) => (Array.isArray(sp[k]) ? sp[k][0] : sp[k]) ?? "";
 
   return (
@@ -67,11 +101,12 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
       <section aria-label="Pipeline" className="flex flex-wrap items-stretch gap-2">
         <Stage label="Drafts" value={sendable.length} note="from today's drift; not sent" />
         <Stage label="Sent to BOSS" value={sent === null ? "—" : sent.length} note={sent === null ? "db/009 not applied" : "recorded here; BOSS holds them"} />
-        <Stage label="Canary green" value="—" note="compat-canary (W3-01) not built" />
-        <Stage label="PR open on platform" value="—" note="platforms pull via pin-bump.yml; not visible here" />
-        <Stage label="Agent runs" value={agentRuns.length} note="Fix with agent hand-offs" />
+        <Stage label="PR open on platform" value={signals.status === "ok" ? openBumps.length : "—"} note={signals.status === "ok" ? "pin-bump PRs the platforms opened" : signals.status === "unconfigured" ? "AGENT_GITHUB_TOKEN not set" : "GitHub unavailable"} />
+        <Stage label="Checks green" value={signals.status === "ok" ? greenBumps.length : "—"} note={signals.status === "ok" ? "pin-bump PRs whose CI passed" : "the platform's CI is the gate"} />
+        <Stage label="Agent runs" value={agentRuns.length} note={signals.status === "ok" ? `${runsWithPull} with a PR` : "Fix with agent hand-offs"} />
         <Stage label="Deployed, as reported" value={reports.status === "ok" ? deployed : "—"} note={reports.status === "ok" ? "the only state that counts" : "BOSS reports unavailable"} accent />
       </section>
+      {signals.status !== "ok" && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{describePlatformUnavailable(signals)}</p>}
 
       <Panel title="Drafts" className="mt-8">
         {!observed.packages ? (
@@ -99,7 +134,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
             <table className="w-full min-w-[48rem] text-left text-sm">
               <thead className="bg-gray-50 text-gray-500 dark:bg-white/5 dark:text-gray-400">
-                <tr><th className="px-4 py-3 font-medium">When</th><th className="px-4 py-3 font-medium">Platform · env</th><th className="px-4 py-3 font-medium">Pins</th><th className="px-4 py-3 font-medium">BOSS id</th><th className="px-4 py-3 font-medium">By</th><th className="px-4 py-3 font-medium">Reported state</th></tr>
+                <tr><th className="px-4 py-3 font-medium">When</th><th className="px-4 py-3 font-medium">Platform · env</th><th className="px-4 py-3 font-medium">Pins</th><th className="px-4 py-3 font-medium">BOSS id</th><th className="px-4 py-3 font-medium">By</th><th className="px-4 py-3 font-medium">Platform PR</th><th className="px-4 py-3 font-medium">Reported state</th></tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {history.map((h) => (
@@ -109,6 +144,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
                     <td className={td}><ul className={`${mono} space-y-0.5`}>{h.pins.map((p) => <li key={p}>{p}</li>)}</ul></td>
                     <td className={`${td} ${mono}`}>{h.bossId}</td>
                     <td className={`${td} text-gray-600 dark:text-gray-300`}>{h.requestedBy}</td>
+                    <td className={td}>{signals.status === "ok" ? <PullChip p={h.pull} /> : <span className="text-xs text-gray-500 dark:text-gray-400">—</span>}</td>
                     <td className={td}><StatusChip colour={DEPLOYED[h.state].colour} label={DEPLOYED[h.state].label} /></td>
                   </tr>
                 ))}
@@ -117,6 +153,48 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
           </div>
         )}
         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Deployed means every pin&apos;s package is reported at the proposed version by that platform environment (<Link href="/boss/reports" className="underline">BOSS reports</Link>). Merging a pin does not deploy it; only the report counts.</p>
+      </Panel>
+
+      <Panel title="Pin-bump pull requests on the platforms" className="mt-8">
+        {signals.status !== "ok" ? (
+          <Notice>{describePlatformUnavailable(signals)}</Notice>
+        ) : repos.length === 0 ? (
+          <EmptyRow>No platform repository to read: no live project with a <span className={mono}>client</span> has a repository set.</EmptyRow>
+        ) : pinBumps.length === 0 ? (
+          <EmptyRow>No <span className={mono}>pin-bump/&lt;proposal id&gt;</span> branch has opened a pull request in {repos.join(", ")} yet. A platform&apos;s pin-bump job opens one per proposal it pulls.</EmptyRow>
+        ) : (
+          <Table head={["Opened", "Repository", "Pull request", "Proposal", "Checks"]}>
+            {pinBumps.slice(0, 50).map((p) => (
+              <tr key={p.url}>
+                <td className={td} title={fmt(p.createdAt)}>{ageLabel(p.createdAt, now)}</td>
+                <td className={`${td} ${mono}`}>{p.repo}</td>
+                <td className={td}><PullChip p={{ ...p, checks: "none" }} /></td>
+                <td className={td}><span className={mono}>{p.proposalId.slice(0, 8)}</span> {sentIds.has(p.proposalId) ? <span className={neutral}>sent from here</span> : <span className={neutral}>sent elsewhere</span>}</td>
+                <td className={td}>{CHECKS[p.checks].colour ? <StatusChip colour={CHECKS[p.checks].colour!} label={CHECKS[p.checks].label} /> : <span className={neutral}>{CHECKS[p.checks].label}</span>}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">CI on the pin-bump PR is the test-before-upgrading gate. The compat canary (W3-01) will post a check run on the same commit and appears here when it exists. Checks are read for open and the newest merged PRs only; a closed, unmerged PR is a refused proposal.</p>
+      </Panel>
+
+      <Panel title="Agent hand-offs" className="mt-8">
+        {agentRuns.length === 0 ? (
+          <EmptyRow>No &quot;Fix with agent&quot; hand-off has been recorded. Start one from <Link href="/drift" className="underline">Drift</Link>.</EmptyRow>
+        ) : (
+          <Table head={["Requested", "Project · env", "Upgrade", "Issue", "Agent's PR"]}>
+            {agentRuns.slice(0, 30).map((r: AgentRun) => (
+              <tr key={r.issueUrl}>
+                <td className={td} title={fmt(r.requestedAt)}>{ageLabel(r.requestedAt, now)}</td>
+                <td className={td}><Link href={`/projects/${r.projectSlug}`} className="font-medium underline">{r.projectSlug}</Link> <span className={`${mono} text-gray-500 dark:text-gray-400`}>{r.environment}</span></td>
+                <td className={`${td} ${mono}`}>{r.package} {r.fromVersion} → {r.toVersion}</td>
+                <td className={td}>{issueRef(r.issueUrl) ? <a href={r.issueUrl} target="_blank" rel="noreferrer noopener" className={`${mono} underline`}>#{issueRef(r.issueUrl)!.number}</a> : <span className="text-xs text-gray-500">not a GitHub issue</span>}</td>
+                <td className={td}>{signals.status === "ok" ? <PullChip p={pullForRun(r, agentPulls)} /> : <span className="text-xs text-gray-500 dark:text-gray-400">—</span>}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">A hand-off&apos;s PR is the one in the same repository that names the issue. The agent is asked for a draft; a person merges, then sets the declared pin here.</p>
       </Panel>
     </div>
   );
@@ -145,7 +223,7 @@ function DraftCard({ d, canSend, isAdmin }: { d: Draft; canSend: boolean; isAdmi
         ))}
       </Table>
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <p className="text-xs text-gray-500 dark:text-gray-400">{d.bump === "major" ? "A major step: read the changelog before sending; no canary evidence exists yet (W3-01)." : "Pins are re-derived from the registry when you send; the form carries only this draft's name."}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{d.bump === "major" ? "A major step: read the changelog before sending. The platform's CI on its pin-bump PR is the only test before upgrading until the compat canary (W3-01) exists." : "Pins are re-derived from the registry when you send; the form carries only this draft's name."}</p>
         {canSend && !d.alreadySent && (
           <form action={sendDraft} className="ml-auto">
             <input type="hidden" name="platform" value={d.platform} />
