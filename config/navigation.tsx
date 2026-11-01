@@ -20,7 +20,7 @@ export const consoleNavigation: {
     { name: "Hubs and packages", path: "/packages", icon: icon(BoxIcon) },
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
     { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
-    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }] },
+    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
     { name: "Operators", path: "/operators", icon: icon(GroupIcon) },
     { name: "Tenants", path: "/tenants", icon: icon(LockIcon) },
