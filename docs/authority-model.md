@@ -1,6 +1,6 @@
 # Authority model: the Control Plane is the source of truth
 
-> **Naming (2026-11-01).** The TIN ops console is now the **TIN Control Plane**, served at `control.tinconnect.com` (it was `console.tinconnect.com`; for a few weeks it was briefly named the Command Center, and `command.tinconnect.com` was planned but never set up). Identifiers are unchanged on purpose: the GitHub repo is `tin-command-centre`, the package and registry slug are `tin-ops-console`, the Neon project is `tin-command-centre`, and env vars keep the `CONSOLE_` prefix. Text below that says "the console" or "the Control Plane" means this app.
+> **Naming (2026-11-01).** The TIN ops console is now the **TIN Control Plane**, served at `control.tinconnect.com` (it was `console.tinconnect.com`; for a few weeks it was briefly named the Command Center, and `command.tinconnect.com` was planned but never set up). The GitHub repo is `tindevelopers/tin-control-plane` (renamed on 2026-11-01 from `tin-command-centre`, which was renamed from `tin-ops-console`; the old addresses redirect). Other identifiers are unchanged on purpose: the package and registry slug are `tin-ops-console`, the Vercel project is `tin-ops-console`, the Neon project is `tin-command-centre`, and env vars keep the `CONSOLE_` prefix. Text below that says "the console" or "the Control Plane" means this app.
 
 **Status:** Owner decision, 2026-10-05. Amends `docs/specs/2026-10-03-tin-ops-console-design.md` in `shell-base-admin` (PR #99).
 
