@@ -104,6 +104,17 @@ Step 4 of the build order. The console now proposes, BOSS records, platforms pul
 - **Rollout.** Deploy the code first (the page says "db/009 not applied" until then), apply 009 on a Neon branch and then on main, mint a console operator key on BOSS and set `BOSS_OPERATOR_KEY`, and add the sending admins to BOSS's operator list.
 - Tests: `db/pin_proposals.test.ts`, `src/boss/drafts.test.ts`, `src/boss/propose.test.ts`.
 
+## Agent runs and Autonomy (phase 2, 2026-11-01)
+
+The Automation group of the interface strategy (§2.1): the decide-and-act loop's own record, and the policy it runs under.
+
+- **Policy as a decision record.** `config/autonomy.ts` carries the owner-approved autonomy policy (strategy §6; the harness template `policy/autonomy.yaml`): the four classes A0 observe, A1 propose, A2 merge on evidence, A3 act with rollback; the task types with their class and spend cap; what a record must show before the owner moves a type up (20 consecutive merges without human changes, 0 reverts in 30 days, reviewer–human agreement κ ≥ 0.6); automatic demotion for 30 days after a revert or incident; the never-above-A1 topics and paths; and the hard limits every agent runs under. It is read, never edited from a page. When `tin-programme` publishes the YAML, that file replaces this one.
+- **Ledger `db/010_agent_ledger.sql`** (from the harness template, W4-06; additive, idempotent; the owner applies it). `agent_ledger_runs` and `agent_ledger_events`, tenant-scoped with RLS, and the `agent_task_type_record` view. A dedicated `agent_ledger_writer` role may insert runs and events and update only the columns that close a run; the console reads; nothing deletes. The owner grants the agent workflows' login that role. `agent_runs` (004) and `pin_proposals` (009) stay as the console's own records.
+- **Agent runs** (`/automation/runs`): one timeline of everything automation did in the tenant, from the ledger plus the console's hand-offs, proposals and collector runs, each with the class it ran under (a hand-off's from the size of its step, a proposal A1 because a person sends, the collector A0). Filter by kind. Figures for the last seven days, agents seen, merged, reverted and cost. Nothing is started from this page.
+- **Autonomy** (`/automation/autonomy`): the class ladder, every task type with its class, cap and record (runs, merged, consecutive clean merges, reverts in 30 days, κ, last run) and a verdict in the policy's own terms: ready for the next class, not yet and why, held down until a date, never above A1, or highest. The console's own actions and the class each runs under. The never-above-A1 list and the hard limits. The page states that A2 waits on enforced required checks (OD-1) and that a per-agent kill switch is not built.
+- Logic is pure and tested (`src/automation/ledger.ts`): a run's fate from its events (last word wins; merged, reverted and closed are final), the consecutive-clean count back from the newest run with open runs neither extending nor breaking it, the 30-day windows, Cohen's κ where both verdicts exist, and the timeline.
+- Tests: `db/agent_ledger.test.ts`, `src/automation/ledger.test.ts`.
+
 ## Still to build
 
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.

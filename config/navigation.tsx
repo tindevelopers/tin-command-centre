@@ -1,5 +1,5 @@
 import React from "react";
-import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon } from "@tindevelopers/ui-shell/icons";
+import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon, TaskIcon } from "@tindevelopers/ui-shell/icons";
 import type { ShellNavItem } from "@tindevelopers/ui-shell";
 
 const icon = (C: React.ComponentType) => React.createElement(C);
@@ -21,6 +21,7 @@ export const consoleNavigation: {
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
     { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
     { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }] },
+    { name: "Automation", icon: icon(TaskIcon), subItems: [{ name: "Agent runs", path: "/automation/runs" }, { name: "Autonomy", path: "/automation/autonomy" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
   ],
   support: [],
