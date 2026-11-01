@@ -11,7 +11,7 @@ const reg: Registry = {
     proj("caas", { kind: "spoke", client: "konnect", ownerProject: "caas" }), proj("ops", { client: "konnect", ownerProject: "caas" }), proj("partner", { client: "konnect" }),
     proj("boss", { kind: "boss", ownerProject: "boss" }), proj("old", { lifecycle: "retired" }),
   ],
-  environments: [], pins: [], adoption: [],
+  environments: [], pins: [],
   assignments: [{ id: "1", projectSlug: "boss", assignee: "gene@tin.info", role: "owner", assignedBy: "x", assignedAt: new Date() }, { id: "2", projectSlug: "ops", assignee: "mary@tin.info", role: "maintainer", assignedBy: "x", assignedAt: new Date() }],
   relations: [{ fromSlug: "caas", toSlug: "ops", relation: "has_part" }, { fromSlug: "caas", toSlug: "partner", relation: "has_part" }, { fromSlug: "boss", toSlug: "caas", relation: "depends_on" }],
 };

@@ -63,14 +63,11 @@ describe("registry commands run against the real schema as console_admin", () =>
     expect(await rows("SELECT owner_project FROM projects WHERE slug = 'konnect'")).toEqual([{ owner_project: "boss" }]);
   });
 
-  it("registers an environment, a pin, an adoption mode and updates them in place", async () => {
+  it("registers an environment and a pin and updates them in place", async () => {
     await run("upsertEnvironment", { slug: "konnect", name: "production", cell: "konnect-prod", region: "europe-west2" });
     await run("setPin", { slug: "konnect", environment: "production", package: "@tindevelopers/ui-shell", version: "1.1.0" });
     await run("setPin", { slug: "konnect", environment: "production", package: "@tindevelopers/ui-shell", version: "1.2.0" });
-    await run("setAdoption", { slug: "konnect", environment: "production", domainMode: "shadow" });
-    await run("setAdoption", { slug: "konnect", environment: "production", domainMode: "remote" });
     expect(await rows("SELECT version FROM declared_pins")).toEqual([{ version: "1.2.0" }]);
-    expect(await rows("SELECT domain_mode FROM boss_adoption")).toEqual([{ domain_mode: "remote" }]);
   });
 
   it("a pin for an environment the project lacks fails and leaves nothing behind", async () => {

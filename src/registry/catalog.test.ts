@@ -17,7 +17,7 @@ const registry = (over: Partial<Registry> = {}): Registry => ({
     project({ slug: "konnect-ops", kind: "app", client: "konnect" }),
   ],
   environments: [{ projectSlug: "tin-boss-api", name: "development", cell: "konnect-dev", region: null, url: null }, { projectSlug: "tin-boss-api", name: "ci", cell: null, region: null, url: null }],
-  pins: [], adoption: [],
+  pins: [],
   assignments: [{ id: "1", projectSlug: "konnect-ops", assignee: "Gene.Foo@tin.info", role: "owner", assignedBy: "x", assignedAt: new Date(0) }],
   relations: [
     { fromSlug: "konnect-ops", toSlug: "tin-boss-api", relation: "consumes_api" },

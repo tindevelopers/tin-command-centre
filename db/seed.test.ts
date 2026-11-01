@@ -18,6 +18,6 @@ describe("registry seed draft", () => {
     expect({ projects: await count("projects"), pins: await count("declared_pins"), relations: await count("project_relations") }).toEqual(first);
     expect(first.projects).toBe(24);
     const audited = (await db.query<{ n: number }>("select count(*)::int n from registry_audit where actor = 'developer@tin.info'")).rows[0].n;
-    expect(audited).toBe(first.projects + (await count("environments")) + first.pins + (await count("boss_adoption")) + first.relations);
+    expect(audited).toBe(first.projects + (await count("environments")) + first.pins + first.relations);
   }, 60_000);
 });

@@ -26,12 +26,6 @@ export function statementsFor(c: Command): Statement[] {
       }];
     case "removePin":
       return [{ text: "DELETE FROM declared_pins WHERE project_slug = $1 AND environment = $2 AND package = $3", params: [c.slug, c.environment, c.package] }];
-    case "setAdoption":
-      return [{
-        text: `INSERT INTO boss_adoption (project_slug, environment, domain_mode) VALUES ($1,$2,$3)
-               ON CONFLICT (tenant_id, project_slug, environment) DO UPDATE SET domain_mode = EXCLUDED.domain_mode`,
-        params: [c.slug, c.environment, c.domainMode],
-      }];
     case "assign":
       // assigned_by is filled from the audited actor, not from form input.
       return [{

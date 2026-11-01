@@ -61,10 +61,6 @@ insert into declared_pins (project_slug, environment, package, version) values
   ('tin-ops-console', 'production', '@tindevelopers/ui-shell', '1.2.0')
 on conflict (project_slug, environment, package) do nothing;
 
-insert into boss_adoption (project_slug, environment, domain_mode) values
-  ('konnect-ops', 'development', 'inprocess')
-on conflict (project_slug, environment) do nothing;
-
 insert into project_relations (from_slug, to_slug, relation) values
   ('konnect-caas-base', 'konnect-app', 'has_part'),
   ('konnect-caas-base', 'konnect-consumer', 'has_part'),

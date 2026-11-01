@@ -55,7 +55,7 @@ describe("cellFinding", () => {
 const project = (slug: string, lifecycle: Project["lifecycle"] = "active"): Project => ({ slug, name: slug, kind: "app", client: null, repo: null, lifecycle, notes: null, ownerProject: null, path: null, ownerGroup: null, tier: null, annotations: {} });
 
 describe("computeDrift", () => {
-  const reg = (over: Partial<Registry>): Registry => ({ projects: [], environments: [], pins: [], adoption: [], assignments: [], relations: [], ...over });
+  const reg = (over: Partial<Registry>): Registry => ({ projects: [], environments: [], pins: [], assignments: [], relations: [], ...over });
 
   it("flags an active project with no owner", () => {
     expect(ownerFinding(project("a"), 0)?.colour).toBe("amber");

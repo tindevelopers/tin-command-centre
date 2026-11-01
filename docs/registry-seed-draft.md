@@ -33,7 +33,6 @@ Also seeded: 3 environments (`tin-boss-api` development with cell `konnect-dev`;
 ## Assumptions to confirm
 1. **`shell-base-admin` as `shell-base`.** I used that kind for it only; the other `shell-base-*` repos are hubs, as the registry calls them. Say if "Shell Base" should mean something wider.
 2. **Packages are not projects.** There are 39 and the collector already observes each one, so they appear as declared versions instead. The `package` kind is unused for now.
-3. **`konnect-ops` BOSS mode is `inprocess`.** Stage 4 adoption is still "planned", so in-process is the safe default.
-4. **Cell name `konnect-dev`** is the cell file's name; the BOSS cell's own `name` is `tin-boss-api-konnect-dev`. The first collector run will show which one it reports.
-5. **Relationships for `konnect-ops` are inferred** from its dependencies (for example `knowledge` implies `shell-base-knowledge`); `tin-boss-api` consuming `shared-api-hub` is inferred from its `API_CREDENTIALS_*` settings. The other seven Konnect apps have no declared versions yet; their `package.json` files were not read.
-6. **Not included:** `shell-base-release-kit`, and the many other repos in the account (client sites, forks, older platforms), because I found no link to this platform.
+3. **Cell name `konnect-dev`** is the cell file's name; the BOSS cell's own `name` is `tin-boss-api-konnect-dev`. The first collector run will show which one it reports.
+4. **Relationships for `konnect-ops` are inferred** from its dependencies (for example `knowledge` implies `shell-base-knowledge`); `tin-boss-api` consuming `shared-api-hub` is inferred from its `API_CREDENTIALS_*` settings. The other seven Konnect apps have no declared versions yet; their `package.json` files were not read.
+5. **Not included:** `shell-base-release-kit`, and the many other repos in the account (client sites, forks, older platforms), because I found no link to this platform.

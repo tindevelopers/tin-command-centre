@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { currentOperator, requireOperator } from "@/src/auth/access";
 import { bySeverity, computeDrift } from "@/src/registry/drift";
 import { loadGroups, loadObserved, loadRegistry, registryConfigured, registryWritable } from "@/src/registry/db";
-import { ASSIGN_ROLES, DOMAIN_MODES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS, TIERS } from "@/src/registry/types";
-import { addRelation, assign, removePin, removeRelation, saveEnvironment, saveProject, setAdoption, setPin, unassign } from "../actions";
+import { ASSIGN_ROLES, ENV_NAMES, KINDS, LIFECYCLES, RELATIONS, TIERS } from "@/src/registry/types";
+import { addRelation, assign, removePin, removeRelation, saveEnvironment, saveProject, setPin, unassign } from "../actions";
+import { compareReported, needsReports } from "@/src/boss/compare";
+import { readReports } from "@/src/boss/reports";
+import { ReportedPins } from "@/components/ReportedPins";
 import { ErrorNotice, Findings, Section, Select, btnCls, inputCls, linkBtnCls } from "@/components/RegistryUi";
 import { Notice, PageHeading, Table, fmt, td } from "@/components/StatusUi";
 
@@ -28,6 +31,9 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const into = reg.relations.filter((r) => r.toSlug === slug);
   const findings = computeDrift(reg, observed.packages, observed.cells).filter((f) => f.projectSlug === slug).sort(bySeverity);
   const hidden = <input type="hidden" name="slug" value={slug} />;
+  // What the platform reports it runs (BOSS GET /v1/reports), only asked for when this project has something to compare. Never throws.
+  const reports = needsReports(project, pins) ? await readReports() : null;
+  const comparisons = reports ? compareReported({ projects: reg.projects, pins }, reports) : [];
 
   return (
     <div>
@@ -46,28 +52,15 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 
       <Section title="Environments">
         {envs.length === 0 ? <Notice>No environments declared.</Notice> : (
-          <Table head={["Environment", "Cell", "Region", "URL", "BOSS mode", ...(canEdit ? [""] : [])]}>
-            {envs.map((e) => {
-              const mode = reg.adoption.find((a) => a.projectSlug === slug && a.environment === e.name)?.domainMode;
-              return (
-                <tr key={e.name}>
-                  <td className={`${td} font-medium`}>{e.name}</td>
-                  <td className={td}>{e.cell ?? "—"}</td>
-                  <td className={td}>{e.region ?? "—"}</td>
-                  <td className={td}>{e.url ? <a className="underline" href={e.url} target="_blank" rel="noreferrer">{e.url}</a> : "—"}</td>
-                  <td className={td}>
-                    {canEdit ? (
-                      <form action={setAdoption} className="flex gap-2">
-                        {hidden}<input type="hidden" name="environment" value={e.name} />
-                        <Select name="domainMode" options={DOMAIN_MODES} defaultValue={mode} />
-                        <button className={btnCls}>Set</button>
-                      </form>
-                    ) : mode ?? "—"}
-                  </td>
-                  {canEdit && <td className={td} />}
-                </tr>
-              );
-            })}
+          <Table head={["Environment", "Cell", "Region", "URL"]}>
+            {envs.map((e) => (
+              <tr key={e.name}>
+                <td className={`${td} font-medium`}>{e.name}</td>
+                <td className={td}>{e.cell ?? "—"}</td>
+                <td className={td}>{e.region ?? "—"}</td>
+                <td className={td}>{e.url ? <a className="underline" href={e.url} target="_blank" rel="noreferrer">{e.url}</a> : "—"}</td>
+              </tr>
+            ))}
           </Table>
         )}
         {canEdit && (
@@ -110,6 +103,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         )}
         {canEdit && envs.length === 0 && <p className="mt-3 text-sm text-gray-500">Add an environment first; versions are declared per environment.</p>}
       </Section>
+
+      {reports && (
+        <Section title="Declared versus reported">
+          <ReportedPins comparisons={comparisons} result={reports} />
+        </Section>
+      )}
 
       <Section title="Owners">
         {assignments.length === 0 ? <Notice>No one is assigned.</Notice> : (

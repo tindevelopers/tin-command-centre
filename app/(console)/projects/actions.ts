@@ -43,9 +43,6 @@ export async function setPin(f: FormData) {
 export async function removePin(f: FormData) {
   return apply("removePin", f);
 }
-export async function setAdoption(f: FormData) {
-  return apply("setAdoption", f);
-}
 export async function assign(f: FormData) {
   return apply("assign", f);
 }
