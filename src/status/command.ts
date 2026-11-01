@@ -17,6 +17,7 @@ export function commandItems(o: { isAdmin: boolean; collectConfigured: boolean; 
     { id: "collect", title: "Collect now", detail: "Refresh cell health on demand instead of waiting for the daily run.", state: gate(o.collectConfigured) },
     { id: "agent", title: "Fix with agent", detail: "Turn a drifting pin into a ticket an agent picks up.", state: gate(o.agentConfigured) },
     { id: "autonomy", title: "Agent runs and autonomy", detail: "What automation did, and which class each task type runs under. Read-only; the owner changes the policy.", state: "live" },
+    { id: "access", title: "Operators and tenants", detail: "Invite operators and set roles; platform admins create and retire tenants.", state: gate(o.registryWritable) },
     { id: "next", title: "Deploy cells, rotate keys, publish packages", detail: "Planned. Not available from the Control Plane yet.", state: "next" },
   ];
 }

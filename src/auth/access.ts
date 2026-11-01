@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { tenantQuery, tenantStoreConfigured } from "@/src/tenancy/db";
 import { currentTenant } from "@/src/tenancy/tenant";
+import { claimInvite, pendingInvite } from "./operators";
 import { requireUser } from "./auth";
 
 export type Operator = { userId: string; email: string; role: "viewer" | "admin" };
@@ -8,14 +9,18 @@ export type Operator = { userId: string; email: string; role: "viewer" | "admin"
 /** The signed-in user's active console_operators row, or null. Neon Auth sign-up can't be closed to OAuth, so signing in alone grants nothing here (spec C6). */
 export async function currentOperator(): Promise<Operator | null> {
   const user = await requireUser();
-  if (!tenantStoreConfigured()) return null;
+  if (!tenantStoreConfigured() || !user.email) return null;
+  const tenantId = (await currentTenant()).id;
   // Membership is per tenant: the same person can be an admin of one tenant and not a member of another.
-  const rows = (await tenantQuery(
-    (await currentTenant()).id,
-    "select role from console_operators where user_id = $1 and removed_at is null",
-    [user.id],
-  )) as { role: "viewer" | "admin" }[];
-  return rows[0] ? { userId: user.id, email: user.email!, role: rows[0].role } : null;
+  const rows = (await tenantQuery(tenantId, "select role from console_operators where user_id = $1 and removed_at is null", [user.id])) as { role: "viewer" | "admin" }[];
+  if (rows[0]) return { userId: user.id, email: user.email, role: rows[0].role };
+  // An invite (src/auth/operators.ts) is claimed on the first sign-in with that address. Needs the admin login; without it the
+  // invite stays pending and the person is still refused, which fails closed.
+  if (!tenantStoreConfigured("admin")) return null;
+  const invite = await pendingInvite(tenantId, user.email);
+  if (!invite) return null;
+  await claimInvite(tenantId, { id: user.id, email: user.email });
+  return { userId: user.id, email: user.email, role: invite.role };
 }
 
 export async function requireOperator(): Promise<Operator> {

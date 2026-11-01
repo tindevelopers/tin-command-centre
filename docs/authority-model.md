@@ -93,6 +93,16 @@ Steps 1 to 3 of the build order in the interface strategy (`tin-boss-api` `docs/
 - **Navigation and look.** Pages ordered estate first (Overview, Projects, Hubs and packages, Cells, Drift), then a **BOSS** submenu listing only pages that exist, then Collector. The shared sidebar has three fixed sections with fixed headings, so titled groups wait for a `ui-shell` change. KPI cards are flat with the status carried by the figure and a dot, not a coloured left border. `PageHeader` takes a title and breadcrumb so every page can use it.
 - Tests: `src/registry/hubs.test.ts`, `src/boss/summary.test.ts`, `src/boss/panel.test.ts`.
 
+## Tenants and operators (phase 2, 2026-11-01)
+
+Phase P2 of the interface strategy: the tenancy that `006` put in place becomes operable from the console.
+
+- **Migration `db/008_tenant_admin.sql`** (additive, idempotent; the owner applies it after deploying this code). It marks `tin` as the **platform tenant** (`tenants.platform`, exactly one), adds `control` to the reserved slugs, and adds the only doors through which the app roles reach `tenants`: `list_tenants()` (every tenant from the platform tenant, only its own from any other, nothing with no tenant set; with live project and active operator counts), `create_tenant()` and `retire_tenant()` (platform tenant and an audited actor only; the platform tenant cannot be retired). Each write function records its own `registry_audit` row in the platform tenant, since `tenants` has no `tenant_id` for the trigger. The direct `SELECT` on `tenants` stays forbidden. Before `008` the Tenants page says so and shows nothing.
+- **Tenants** (`/tenants`): the list with host, isolation, counts and status; platform admins create (slug, name, shared or dedicated with the NAME of its connection secret) and retire. The page also shows which integrations this deployment has configured, by environment-variable name only (`src/tenancy/admin.ts`), and how a request is scoped. Per-tenant integrations are phase P4.
+- **Operators** (`/operators`): the tenant's `console_operators`; admins invite by email, change roles and remove. An invite is a row whose `user_id` is `pending:<email>` until that person first signs in with the address, when `currentOperator` (`src/auth/access.ts`) swaps in their Neon Auth id (`claimInvite`, `src/auth/operators.ts`; it needs the admin login, otherwise the invite stays pending and the person is still refused). Guards: nobody changes their own role or removes themself, and the last active admin cannot be removed; the last guard is in the `UPDATE`'s `WHERE`, not only in the form. Removal is `removed_at`, never a delete.
+- Validation of form input is `src/tenancy/validate.ts`; the database's constraints remain the backstop. Tests: `db/tenant_admin.test.ts`, `src/tenancy/validate.test.ts`, `src/tenancy/admin.test.ts`.
+- **Bootstrapping a new tenant's first operator** still needs either a platform admin who is also made a member there (by SQL, as today) or a SQL insert; inviting from the platform tenant into another tenant is deliberately not possible, since membership rows are tenant-scoped.
+
 ## Pin proposals (phase 2, 2026-11-01)
 
 Step 4 of the build order. The console now proposes, BOSS records, platforms pull (BOSS-8): nothing here touches a platform repository.
