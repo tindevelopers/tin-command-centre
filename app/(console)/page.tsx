@@ -1,5 +1,7 @@
 import { requireOperator } from "@/src/auth/access";
 import { agentConfigured } from "@/src/agent/github";
+import { readReports } from "@/src/boss/reports";
+import { platformCounts, platformSummary, registeredPlatforms } from "@/src/boss/summary";
 import { bySeverity, computeDrift } from "@/src/registry/drift";
 import { loadObserved, loadRecentAudit, loadRegistry, registryConfigured, registryWritable } from "@/src/registry/db";
 import { estateByKind, lifecycleCounts } from "@/src/registry/summary";
@@ -12,6 +14,7 @@ import type { Colour } from "@/src/status/types";
 import { currentTenant } from "@/src/tenancy/tenant";
 import { ActionsTable, EmptyRow, EstateTable, KpiStrip, PageHeader, Panel, STATUS_LABEL, StatusChip, buttonPrimary, buttonSecondary } from "@/components/ControlPlane";
 import type { Kpi } from "@/components/ControlPlane";
+import { BossPanel } from "@/components/BossPanel";
 import { Findings } from "@/components/RegistryUi";
 import { Notice, PageHeading, Table, fmt, td } from "@/components/StatusUi";
 import { signOut } from "../signin/actions";
@@ -34,8 +37,11 @@ export default async function OverviewPage() {
   }
 
   const now = new Date();
-  const [reg, observed, runs, audit] = await Promise.all([loadRegistry(), loadObserved(), recentRuns(5).catch(() => []), loadRecentAudit(6)]);
+  // readReports never throws and gives up after 3 s, so a slow BOSS cannot hold the Overview beyond that.
+  const [reg, observed, runs, audit, reports] = await Promise.all([loadRegistry(), loadObserved(), recentRuns(5).catch(() => []), loadRecentAudit(6), readReports()]);
   const findings = computeDrift(reg, observed.packages, observed.cells).sort(bySeverity);
+  const platforms = platformSummary(reg, reports);
+  const reporting = platformCounts(platforms, registeredPlatforms(reg.projects));
   const count = (c: Colour) => findings.filter((f) => f.colour === c).length;
   const attention = findings.filter((f) => f.colour !== "green");
   const red = count("red");
@@ -78,6 +84,14 @@ export default async function OverviewPage() {
           <EstateTable rows={estateByKind(reg, findings)} />
         </Panel>
       </div>
+
+      <Panel
+        title="BOSS: what platforms report"
+        link={{ href: "/boss/reports", label: reports.status === "ok" ? `${reporting.reporting} of ${reporting.registered} registered platforms reporting · Open reports` : "Open reports" }}
+        className="mt-8"
+      >
+        <BossPanel rows={platforms} result={reports} now={now} />
+      </Panel>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Panel title="Recent collections" link={{ href: "/collector", label: "Open collector" }}>
