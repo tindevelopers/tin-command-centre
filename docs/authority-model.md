@@ -84,6 +84,15 @@ The declared BOSS adoption mode (`boss_adoption`, `inprocess | shadow | remote`)
 - `registry_audit` keeps its old `boss_adoption` rows. It is append-only history.
 - Do not re-run 006 alone after 007: it still names the table. Apply 001 to 007 in order on a fresh database.
 
+## Hubs, BOSS reports and the interface (2026-11-01)
+
+Steps 1 to 3 of the build order in the interface strategy (`tin-boss-api` `docs/strategy/2026-11-01-control-plane-interface-and-evolution.md`).
+
+- **Hubs and packages** (`/packages`) is now one row per hub, opening into its packages: the collector's snapshots grouped by `repo`, joined to the hub topology decided on 2026-10-30. The topology (layer, risk class, planned, rename, archive, shrink, one-line note, harness tasks) is a decision record in `config/topology.ts`, keyed by repository; a project's `annotations` (`tin.info/layer`, `tin.info/risk-class`, `tin.info/topology`, `tin.info/topology-note`) override it when present, so the registry can take it over with no code change. Package state is read from the collector's `divergence` text (`src/registry/hubs.ts`: OK, awaiting promotion, unpublished, known drift, divergent). Planned hubs with no packages still appear. Promotion stays an owner gate and is not done from the console.
+- **BOSS reports** (`/boss/reports`, and a panel on the Overview): one row per platform environment from `GET /v1/reports` (`src/boss/summary.ts`), with every registered platform listed, so a platform that never reported is visible as "not reported", and the declared-versus-reported comparison across all projects. Read with the console's own key; the same fail-closed reader and fixed error strings as before. The Overview waits at most the reader's 3 s for BOSS.
+- **Navigation and look.** Pages ordered estate first (Overview, Projects, Hubs and packages, Cells, Drift), then a **BOSS** submenu listing only pages that exist, then Collector. The shared sidebar has three fixed sections with fixed headings, so titled groups wait for a `ui-shell` change. KPI cards are flat with the status carried by the figure and a dot, not a coloured left border. `PageHeader` takes a title and breadcrumb so every page can use it.
+- Tests: `src/registry/hubs.test.ts`, `src/boss/summary.test.ts`, `src/boss/panel.test.ts`.
+
 ## Still to build
 
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.
