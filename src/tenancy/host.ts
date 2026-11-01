@@ -7,7 +7,7 @@
  */
 export type TenantConfig = { baseDomain: string; defaultTenant: string; otherHosts: "default" | "reject" };
 
-/** Slug rules match db/006_tenants.sql. "control" is reserved here first; the database list (006 is already applied) gains it in a later migration. */
+/** Slug rules match db/006_tenants.sql; db/008_tenant_admin.sql adds "control" to the database's reserved list as well. */
 export const RESERVED_SLUGS = ["admin", "www", "api", "auth", "command", "control", "app", "platform"] as const;
 const SLUG = /^[a-z0-9]([a-z0-9-]{0,28}[a-z0-9])?$/;
 
