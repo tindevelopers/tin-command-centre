@@ -33,7 +33,7 @@ export function StatusChip({ colour, label }: { colour: Colour; label?: string }
 export function PageHeader({ tenant, subtitle, children }: { tenant: string; subtitle: string; children?: React.ReactNode }) {
   return (
     <header className="mb-6">
-      <nav aria-label="Breadcrumb" className="text-xs text-gray-500 dark:text-gray-400">Command Center <span aria-hidden>/</span> <span className="text-gray-700 dark:text-gray-200">Overview</span></nav>
+      <nav aria-label="Breadcrumb" className="text-xs text-gray-500 dark:text-gray-400">Control Plane <span aria-hidden>/</span> <span className="text-gray-700 dark:text-gray-200">Overview</span></nav>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-title-sm font-semibold text-gray-800 dark:text-white/90">Overview</h1>

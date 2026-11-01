@@ -1,4 +1,4 @@
--- Multi-tenancy, phase 1 (docs: Programming KB, Products > TIN Command Center > Architecture, multi-tenant).
+-- Multi-tenancy, phase 1 (docs: Programming KB, Products > TIN Control Plane > Architecture, multi-tenant).
 -- One database, many tenants, isolated by row-level security (RLS). Everything that exists today becomes tenant 'tin'.
 -- Idempotent: safe to apply twice. Requires 001 to 005.
 --

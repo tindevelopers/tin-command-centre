@@ -15,7 +15,7 @@ export type PinTaskInput = {
   observedAt: Date | null;
   /** Repo that publishes the package, from the collector. */
   packageRepo: string | null;
-  /** Command Center origin, e.g. https://command.tinconnect.com; null omits the links. */
+  /** Control Plane origin, e.g. https://control.tinconnect.com; null omits the links. */
   origin: string | null;
   /** Other live projects declaring the same package behind the latest version. */
   alsoBehind: { slug: string; environment: string; version: string }[];
@@ -68,7 +68,7 @@ export function buildPinTask(i: PinTaskInput): AgentTask {
       `- App folder: ${where}`,
       "",
       "## Evidence",
-      `- Declared in the TIN Command Center (the registry is the source of truth): \`${i.declared}\``,
+      `- Declared in the TIN Control Plane (the registry is the source of truth): \`${i.declared}\``,
       `- Latest published: \`${i.latest}\` (${size} bump)${i.observedAt ? `, observed ${i.observedAt.toISOString().slice(0, 16).replace("T", " ")} UTC` : ""}`,
       ...pkgLinks,
       ...links,
@@ -83,13 +83,13 @@ export function buildPinTask(i: PinTaskInput): AgentTask {
       "- [ ] Only this app's dependency on this package changed; no other packages bumped.",
       "- [ ] `pnpm lint:enforced`, `pnpm type-check` and `pnpm build` pass (the same checks as the PR check workflow).",
       "- [ ] The PR is a **draft**, links this issue, and says what changed and what a reviewer must check.",
-      "- [ ] The PR description ends with: after merge, set this project's declared pin to the new version in the TIN Command Center.",
+      "- [ ] The PR description ends with: after merge, set this project's declared pin to the new version in the TIN Control Plane.",
       "",
       "## Rules",
       "- Do not merge the PR and do not enable auto-merge.",
       "- If a check fails for a reason unrelated to this upgrade, say so in the PR instead of fixing it.",
       "",
-      `Requested by ${i.requestedBy} from the TIN Command Center.`,
+      `Requested by ${i.requestedBy} from the TIN Control Plane.`,
     ].join("\n"),
   };
 }
