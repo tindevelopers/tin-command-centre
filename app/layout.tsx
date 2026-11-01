@@ -11,7 +11,7 @@ const outfit = localFont({
 });
 
 export const metadata = {
-  title: "TIN Command Center",
+  title: "TIN Control Plane",
   description: "What TIN runs, who owns it, and whether it matches what was declared",
 };
 

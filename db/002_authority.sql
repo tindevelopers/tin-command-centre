@@ -1,4 +1,4 @@
--- TIN Command Center registry: the declared (authoritative) state. Spec amendment: docs/authority-model.md.
+-- TIN Control Plane registry: the declared (authoritative) state. Spec amendment: docs/authority-model.md.
 -- Idempotent: safe to apply twice. Requires 001_status.sql.
 -- Observed state (collector snapshots) is compared against this; it never overwrites it.
 -- console_admin is created NOLOGIN, like the other roles; the owner enables login out of band.

@@ -4,7 +4,7 @@ import type { ShellNavItem } from "@tindevelopers/ui-shell";
 
 const icon = (C: React.ComponentType) => React.createElement(C);
 
-/** TIN Command Center navigation (spec C7). Consumers and keys arrives in phase 2 (T13). */
+/** TIN Control Plane navigation (spec C7). Consumers and keys arrives in phase 2 (T13). */
 export const consoleNavigation: {
   main: ShellNavItem[];
   support: ShellNavItem[];

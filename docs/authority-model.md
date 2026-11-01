@@ -1,6 +1,6 @@
-# Authority model: the Command Center is the source of truth
+# Authority model: the Control Plane is the source of truth
 
-> **Naming (2026-10-14).** The TIN ops console is now the **TIN Command Center**, served at `command.tinconnect.com` (was `console.tinconnect.com`). Identifiers are unchanged on purpose: the repo and package are `tin-ops-console`, the Neon project is `tin-ops-console`, the registry slug is `tin-ops-console`, and env vars keep the `CONSOLE_` prefix. Text below that says "the console" means the Command Center.
+> **Naming (2026-11-01).** The TIN ops console is now the **TIN Control Plane**, served at `control.tinconnect.com` (it was `console.tinconnect.com`; for a few weeks it was briefly named the Command Center, and `command.tinconnect.com` was planned but never set up). Identifiers are unchanged on purpose: the GitHub repo is `tin-command-centre`, the package and registry slug are `tin-ops-console`, the Neon project is `tin-command-centre`, and env vars keep the `CONSOLE_` prefix. Text below that says "the console" or "the Control Plane" means this app.
 
 **Status:** Owner decision, 2026-10-05. Amends `docs/specs/2026-10-03-tin-ops-console-design.md` in `shell-base-admin` (PR #99).
 
@@ -53,9 +53,9 @@ The Collector page has a **Collect now** button for admins. It does not collect 
 
 ## Tenants (phase 1)
 
-The registry is tenant-scoped (`db/006_tenants.sql`; design in the Programming KB under Products > TIN Command Center > Architecture). Everything that existed is tenant `tin`. Phase 1 has no second tenant yet; it puts the isolation in place first.
+The registry is tenant-scoped (`db/006_tenants.sql`; design in the Programming KB under Products > TIN Control Plane > Architecture). Everything that existed is tenant `tin`. Phase 1 has no second tenant yet; it puts the isolation in place first.
 
-- **How a request is scoped.** The tenant comes from the `Host` header (`src/tenancy/host.ts`, configured by `COMMAND_BASE_DOMAIN`, `DEFAULT_TENANT`, `TENANT_OTHER_HOSTS`). Every read and write runs in a transaction that first sets `app.tenant_id` (`src/tenancy/db.ts`). Row-level security on each registry table then limits rows to that tenant, and inserts are stamped with it. With no tenant set, nothing is readable or writable.
+- **How a request is scoped.** The tenant comes from the `Host` header (`src/tenancy/host.ts`, configured by `CONTROL_BASE_DOMAIN`, `DEFAULT_TENANT`, `TENANT_OTHER_HOSTS`). Every read and write runs in a transaction that first sets `app.tenant_id` (`src/tenancy/db.ts`). Row-level security on each registry table then limits rows to that tenant, and inserts are stamped with it. With no tenant set, nothing is readable or writable.
 - **Keys.** Slugs are unique per tenant, and foreign keys are composite, so a row can only reference its own tenant's rows.
 - **Not tenant-scoped.** The collector's runs and snapshots describe the shared estate. Tenants will see them only through explicit views (a later phase).
 - **Tenant lookup.** The app roles cannot read `tenants`; `resolve_tenant(slug)` is the only way to learn an id.

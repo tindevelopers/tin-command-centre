@@ -1,21 +1,21 @@
 /**
  * Which tenant a request is for, from its hostname. Pure, so it is easy to test.
- *   command.tinconnect.com          -> the default tenant ("tin": phase 1 has only this one)
- *   botski.command.tinconnect.com   -> "botski"
+ *   control.tinconnect.com          -> the default tenant ("tin": phase 1 has only this one)
+ *   botski.control.tinconnect.com   -> "botski"
  *   anything else (localhost, previews, the old console address) -> the default tenant, or null when other hosts are rejected
  * A name that is not a valid, unreserved tenant slug yields null, which the app turns into a 404.
  */
 export type TenantConfig = { baseDomain: string; defaultTenant: string; otherHosts: "default" | "reject" };
 
-/** Must match the slug rules and reserved names in db/006_tenants.sql. */
-export const RESERVED_SLUGS = ["admin", "www", "api", "auth", "command", "app", "platform"] as const;
+/** Slug rules match db/006_tenants.sql. "control" is reserved here first; the database list (006 is already applied) gains it in a later migration. */
+export const RESERVED_SLUGS = ["admin", "www", "api", "auth", "command", "control", "app", "platform"] as const;
 const SLUG = /^[a-z0-9]([a-z0-9-]{0,28}[a-z0-9])?$/;
 
 export const isTenantSlug = (s: string): boolean => SLUG.test(s) && !(RESERVED_SLUGS as readonly string[]).includes(s);
 
 export function tenantConfig(env: Record<string, string | undefined> = process.env): TenantConfig {
   return {
-    baseDomain: (env.COMMAND_BASE_DOMAIN || "command.tinconnect.com").toLowerCase(),
+    baseDomain: (env.CONTROL_BASE_DOMAIN || "control.tinconnect.com").toLowerCase(),
     defaultTenant: env.DEFAULT_TENANT || "tin",
     otherHosts: env.TENANT_OTHER_HOSTS === "reject" ? "reject" : "default",
   };

@@ -19,17 +19,17 @@ const points = [
   ["Drift", "The gap between the two, flagged before it becomes an incident."],
 ];
 
-/** The front page: the Command Center's identity on the left, sign-in on the right. */
+/** The front page: the Control Plane's identity on the left, sign-in on the right. */
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <main className="grid min-h-screen lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <section className="relative hidden flex-col justify-between bg-[#0A110E] p-12 text-[#E8EFEA] lg:flex">
         <div className="flex items-center gap-3 text-[#3DDC97]">
           <Mark />
-          <span className="text-lg font-semibold tracking-wide text-[#E8EFEA]">TIN Command Center</span>
+          <span className="text-lg font-semibold tracking-wide text-[#E8EFEA]">TIN Control Plane</span>
         </div>
         <div className="max-w-lg">
-          <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#3DDC97]">command.tinconnect.com</p>
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#3DDC97]">control.tinconnect.com</p>
           <h2 className="mt-4 text-5xl font-bold leading-[1.05] tracking-tight">Everything TIN runs, in one place.</h2>
           <p className="mt-5 text-lg leading-relaxed text-[#A8B8AE]">Every hub, package, app and cell, who owns it, and whether what is deployed matches what you declared.</p>
           <dl className="mt-10 space-y-5">
@@ -47,7 +47,7 @@ function Frame({ children }: { children: React.ReactNode }) {
         <div className="mx-auto w-full max-w-sm space-y-5">
           <div className="flex items-center gap-3 text-brand-500 lg:hidden">
             <Mark />
-            <span className="text-base font-semibold text-gray-800 dark:text-white/90">TIN Command Center</span>
+            <span className="text-base font-semibold text-gray-800 dark:text-white/90">TIN Control Plane</span>
           </div>
           {children}
         </div>
