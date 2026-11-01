@@ -89,3 +89,27 @@ export async function recordAgentRun(r: Omit<AgentRun, "requestedAt">): Promise<
     params: [r.projectSlug, r.environment, r.package, r.fromVersion, r.toVersion, r.issueUrl, r.requestedBy],
   }]);
 }
+
+export type SentPinProposal = { id: string; platform: string; environment: string; pins: string[]; bossId: string; requestedBy: string; requestedAt: Date };
+
+/** Postgres 42P01: the table does not exist (db/009 not applied). */
+const isMissingTable = (e: unknown): boolean => typeof e === "object" && e !== null && (e as { code?: string }).code === "42P01";
+
+/** Proposals this tenant sent to BOSS, newest first; null before db/009_pin_proposals.sql is applied, so the page can say so. */
+export async function loadPinProposals(limit = 200): Promise<SentPinProposal[] | null> {
+  try {
+    const rows = await read(`select id, platform, environment, pins, boss_id, requested_by, requested_at from pin_proposals order by requested_at desc limit ${Math.max(1, Math.min(1000, Math.floor(limit)))}`);
+    return rows.map((r) => ({ id: String(r.id), platform: r.platform, environment: r.environment, pins: Array.isArray(r.pins) ? r.pins.filter((p: unknown): p is string => typeof p === "string") : [], bossId: r.boss_id, requestedBy: r.requested_by, requestedAt: new Date(r.requested_at) }));
+  } catch (e) {
+    if (isMissingTable(e)) return null;
+    throw e;
+  }
+}
+
+export async function recordPinProposal(r: Omit<SentPinProposal, "id" | "requestedAt">): Promise<void> {
+  await registryWrite(r.requestedBy, [{
+    text: "INSERT INTO pin_proposals (platform, environment, pins, boss_id, requested_by) VALUES ($1, $2, $3, $4, $5)",
+    params: [r.platform, r.environment, r.pins, r.bossId, r.requestedBy],
+  }]);
+}
+
