@@ -24,7 +24,12 @@ function Chips({ red, amber }: { red: number; amber: number }) {
 /** Rows arrive sorted and (optionally) nested by the server. Only the expand/collapse of a parent is client state. */
 export default function ProjectsTable({ rows, sorts, nested }: { rows: TreeRow[]; sorts: SortLink[]; nested: boolean }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const toggle = (slug: string) => setCollapsed((s) => { const n = new Set(s); n.has(slug) ? n.delete(slug) : n.add(slug); return n; });
+  const toggle = (slug: string) => setCollapsed((s) => {
+    const n = new Set(s);
+    if (n.has(slug)) n.delete(slug);
+    else n.add(slug);
+    return n;
+  });
   const parentOf = new Map<string, string>();
   let lastParent = "";
   for (const t of rows) { if (t.depth === 0) lastParent = t.row.slug; else parentOf.set(t.row.slug, lastParent); }

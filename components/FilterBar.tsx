@@ -24,7 +24,10 @@ export default function FilterBar({ fields, shown, total, noun }: { fields: Filt
   const apply = (changes: Record<string, string>) => {
     const next = new URLSearchParams(params.toString());
     next.delete("error");
-    for (const [k, v] of Object.entries(changes)) (v ? next.set(k, v) : next.delete(k));
+    for (const [k, v] of Object.entries(changes)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
