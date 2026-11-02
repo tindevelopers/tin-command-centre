@@ -7,8 +7,7 @@ const icon = (C: React.ComponentType) => React.createElement(C);
 /**
  * TIN Control Plane navigation (spec C7), in the order of the 2026-11-01 interface strategy: the estate first, then BOSS.
  * The shared sidebar has three fixed sections with fixed headings, so BOSS is a submenu rather than a titled group; a page
- * is listed only once it exists. Consumers and keys (T13) arrives with its page.
- * is listed only once it exists. Consumers (T13) and Tenants arrive with their pages.
+ * is listed only once it exists.
  */
 export const consoleNavigation: {
   main: ShellNavItem[];
@@ -24,7 +23,7 @@ export const consoleNavigation: {
     { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }, { name: "Keys", path: "/boss/keys" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
     { name: "Operators", path: "/operators", icon: icon(GroupIcon) },
-    { name: "Tenants", path: "/tenants", icon: icon(LockIcon) },
+    { name: "Settings", icon: icon(LockIcon), subItems: [{ name: "Tenants", path: "/tenants" }, { name: "Policy", path: "/settings/policy" }, { name: "Integrations", path: "/settings/integrations" }] },
   ],
   support: [],
   others: [],
