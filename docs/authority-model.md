@@ -121,6 +121,15 @@ Step 4 of the build order. The console now proposes, BOSS records, platforms pul
 - Nothing BOSS sends is interpolated into text; failures are fixed strings. Rollout: mint the console credentials key on BOSS, set `BOSS_CREDENTIALS_KEY` (and `BOSS_API_URL`), and BOSS needs its credential admin login (`BOSS_CREDENTIAL_ADMIN_DATABASE_URL`) before the routes exist; until then the page says BOSS refused.
 - Tests: `db/pin_proposals.test.ts`, `src/boss/drafts.test.ts`, `src/boss/propose.test.ts`.
 
+## Releases and Review queue (BOSS, 2026-11-02)
+
+The two BOSS items the interface strategy listed and the cells did not yet serve (§2.1). Both are operator routes: the console's operator key as `x-api-key`, the signed-in person's Neon Auth token as the bearer, and that person on BOSS's operator list. `src/boss/operator.ts` is the one place those rules live (https only, no redirects, a time budget, fixed reasons, a 409 detail matched but never shown); the readers add their own meanings for 404 and 409.
+
+- **Releases** (`/boss/releases`, `src/boss/releases.ts`, scope `boss.releases.write`): the signed, immutable knowledge bundles platforms pull, listed as metadata (version, SHA-256, who, when) from `GET /v1/knowledge/releases`. An admin builds one with `POST /v1/knowledge/releases` (autonomy class A1): version typed twice because a release is immutable, at most 50 platform space ids, both validated to BOSS's shape before anything leaves the console; BOSS builds, signs, verifies its own output and stores, and refuses an existing version. The console never fetches a bundle and BOSS never serves a key to trust: platforms pin the release public key themselves.
+- **Review queue** (`/boss/queue`, `src/boss/queue.ts`, scope `boss.knowledge.write`): platform documents awaiting review from `GET /v1/knowledge/queue`, bound to the signed-in operator, paged by cursor. An admin accepts (publishes the listed revision) or rejects (returns to draft); the action re-reads the queue first so a stale form cannot decide a revision the queue no longer lists, and BOSS refuses a changed document with a 409 besides. No reason travels: the knowledge package has no field for one. A document edited after submission is marked so it is read again before deciding.
+- **What a cell serves.** A cell mounts only what its configuration enables: releases need the upstream store and the release key, the queue needs the knowledge login (a Neon Auth cell). `tin-production` has neither, so both pages read a 404 as "this cell does not serve it" rather than as a refusal. `BOSS_OPERATOR_KEY` must carry the scope each page names.
+- Navigation: the BOSS submenu gains Releases and Review queue. Tests: `src/boss/releases-queue.test.ts`.
+
 ## Still to build
 
 1. Declared versions for the seven Konnect apps other than `konnect-ops`, so drift covers them.
