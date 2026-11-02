@@ -1,5 +1,5 @@
 import React from "react";
-import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon, GroupIcon, LockIcon } from "@tindevelopers/ui-shell/icons";
+import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon, TaskIcon, GroupIcon, LockIcon } from "@tindevelopers/ui-shell/icons";
 import type { ShellNavItem } from "@tindevelopers/ui-shell";
 
 const icon = (C: React.ComponentType) => React.createElement(C);
@@ -20,7 +20,9 @@ export const consoleNavigation: {
     { name: "Hubs and packages", path: "/packages", icon: icon(BoxIcon) },
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
     { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
+    { name: "Consumers and keys", path: "/keys", icon: icon(LockIcon) },
     { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }, { name: "Releases", path: "/boss/releases" }, { name: "Review queue", path: "/boss/queue" }, { name: "Keys", path: "/boss/keys" }] },
+    { name: "Automation", icon: icon(TaskIcon), subItems: [{ name: "Agent runs", path: "/automation/runs" }, { name: "Autonomy", path: "/automation/autonomy" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
     { name: "Operators", path: "/operators", icon: icon(GroupIcon) },
     { name: "Settings", icon: icon(LockIcon), subItems: [{ name: "Tenants", path: "/tenants" }, { name: "Policy", path: "/settings/policy" }, { name: "Integrations", path: "/settings/integrations" }] },

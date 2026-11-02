@@ -113,3 +113,36 @@ export async function recordPinProposal(r: Omit<SentPinProposal, "id" | "request
   }]);
 }
 
+
+/** Rows of db/010: the agent ledger. null before the migration is applied, so the pages can say so. */
+export async function loadLedgerRuns(limit = 500): Promise<LedgerRunRow[] | null> {
+  try {
+    const rows = await read(`select id, agent, task_type, autonomy, repository, model, reviewer_model, trigger, started_at, finished_at, cost_usd, pr_url, issue_url, diff_files, diff_lines, tests_before, tests_after, outcome
+      from agent_ledger_runs order by started_at desc limit ${Math.max(1, Math.min(2000, Math.floor(limit)))}`);
+    return rows.map((r) => ({
+      id: String(r.id), agent: r.agent, taskType: r.task_type, autonomy: r.autonomy, repository: r.repository, model: r.model, reviewerModel: r.reviewer_model ?? null, trigger: r.trigger,
+      startedAt: new Date(r.started_at), finishedAt: r.finished_at ? new Date(r.finished_at) : null, costUsd: r.cost_usd === null || r.cost_usd === undefined ? null : Number(r.cost_usd),
+      prUrl: r.pr_url ?? null, issueUrl: r.issue_url ?? null, diffFiles: r.diff_files ?? null, diffLines: r.diff_lines ?? null, testsBefore: r.tests_before ?? null, testsAfter: r.tests_after ?? null, outcome: r.outcome ?? null,
+    }));
+  } catch (e) {
+    if (isMissingTable(e)) return null;
+    throw e;
+  }
+}
+
+export async function loadLedgerEvents(limit = 5000): Promise<LedgerEventRow[] | null> {
+  try {
+    const rows = await read(`select id, run_id, at, event, actor from agent_ledger_events order by at desc limit ${Math.max(1, Math.min(20000, Math.floor(limit)))}`);
+    return rows.map((r) => ({ id: String(r.id), runId: String(r.run_id), at: new Date(r.at), event: r.event, actor: r.actor }));
+  } catch (e) {
+    if (isMissingTable(e)) return null;
+    throw e;
+  }
+}
+
+export type LedgerRunRow = {
+  id: string; agent: string; taskType: string; autonomy: "A0" | "A1" | "A2" | "A3"; repository: string; model: string; reviewerModel: string | null; trigger: "schedule" | "event" | "issue" | "manual";
+  startedAt: Date; finishedAt: Date | null; costUsd: number | null; prUrl: string | null; issueUrl: string | null; diffFiles: number | null; diffLines: number | null; testsBefore: number | null; testsAfter: number | null;
+  outcome: "no-op" | "issue" | "draft-pr" | "ready-pr" | "failed" | "over-budget" | null;
+};
+export type LedgerEventRow = { id: string; runId: string; at: Date; event: "checks-passed" | "checks-failed" | "review-approve" | "review-changes" | "human-approve" | "human-changes" | "merged" | "closed-unmerged" | "reverted" | "incident" | "rule-proposed" | "rule-accepted"; actor: string };
