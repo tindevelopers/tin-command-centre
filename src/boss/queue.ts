@@ -35,7 +35,7 @@ export const describeQueueFailure = (r: Exclude<QueueResult, { status: "ok" }>) 
 export const describeDecideFailure = (r: Exclude<DecideResult, { status: "ok" }>) => (r.status === "invalid" ? `Nothing was decided: ${r.reason}` : `Nothing was decided: ${describeCall(r, ROUTE)}`);
 
 /** Display text from BOSS is bounded and stripped of control characters; it is still rendered as text, never as markup. */
-const clean = (v: unknown): string | null => (typeof v === "string" && v.length <= TEXT_MAX ? v.replace(/[\u0000-\u001f\u007f]/g, " ").trim() : null);
+const clean = (v: unknown): string | null => (typeof v === "string" && v.length <= TEXT_MAX ? v.replace(/\p{Cc}/gu, " ").trim() : null);
 
 /** One wire row; null when any field is not exactly what BOSS promises. */
 export function parseQueueItem(row: unknown): QueueItem | null {

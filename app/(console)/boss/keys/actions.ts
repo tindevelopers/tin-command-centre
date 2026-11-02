@@ -18,7 +18,7 @@ export async function revokeKey(f: FormData) {
   const confirmLast = f.get("confirmLast") === "on";
   const m = /^urn:tin:([a-z0-9-]+):([a-z]+)$/.exec(identity);
   const back = m ? `platform=${encodeURIComponent(m[1]!)}&environment=${encodeURIComponent(m[2]!)}` : "";
-  let result = "";
+  let result: string;
   try {
     if (!isCredentialId(id) || !isIdentity(identity) || !m) throw new Error("That request is not valid. Reload the page.");
     const bearer = await operatorBearer();

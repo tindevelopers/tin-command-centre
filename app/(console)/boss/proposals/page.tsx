@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { currentOperator, requireOperator } from "@/src/auth/access";
 import { buildDrafts, deployedState } from "@/src/boss/drafts";
-import type { DeployedState, Draft, SentProposal } from "@/src/boss/drafts";
+import type { DeployedState, Draft } from "@/src/boss/drafts";
 import { MAX_REPOS, describePlatformUnavailable, issueRef, platformRepos, pullForProposal, pullForRun, readPlatformSignals } from "@/src/boss/platform";
 import type { AgentPull, CheckState, PinBumpPull, PullState } from "@/src/boss/platform";
 import { readReports } from "@/src/boss/reports";
