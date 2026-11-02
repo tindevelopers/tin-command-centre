@@ -15,7 +15,7 @@ export async function buildReleaseAction(f: FormData) {
   const version = String(f.get("version") ?? "").trim();
   const confirm = String(f.get("confirm") ?? "").trim();
   const spaceIds = parseSpaceIds(String(f.get("spaceIds") ?? ""));
-  let result = "";
+  let result: string;
   try {
     if (version !== confirm) throw new Error("Nothing was built: type the version twice, exactly the same, to confirm.");
     const r = await buildRelease({ version, spaceIds }, await operatorBearer());

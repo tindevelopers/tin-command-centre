@@ -17,7 +17,7 @@ export async function decideAction(f: FormData) {
   const documentId = String(f.get("documentId") ?? "").toLowerCase();
   const revisionId = String(f.get("revisionId") ?? "").toLowerCase();
   const decision = String(f.get("decision") ?? "");
-  let result = "";
+  let result: string;
   try {
     if (!isUuid(documentId) || !isUuid(revisionId) || (decision !== "accept" && decision !== "reject")) throw new Error("That request is not valid. Reload the page.");
     const bearer = await operatorBearer();

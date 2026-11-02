@@ -18,7 +18,7 @@ export async function sendDraft(f: FormData) {
   const environment = String(f.get("environment") ?? "");
   const partRaw = String(f.get("part") ?? "");
   const part = partRaw ? Number(partRaw) : null;
-  let result = "";
+  let result: string;
   try {
     const [reg, observed, sent] = await Promise.all([loadRegistry(), loadObserved(), loadPinProposals()]);
     const draft = findDraft(buildDrafts(reg, observed.packages, sent ?? []), platform, environment, Number.isInteger(part) ? part : null);
