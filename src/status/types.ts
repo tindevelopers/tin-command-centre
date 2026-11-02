@@ -30,3 +30,15 @@ export type CellSnapshot = {
   readyzStatus: number | null;
   checkedAt: Date;
 };
+
+/** A key's metadata as the collector saw it in api-credentials (db/001 credential_snapshots): no hash, pepper or secret exists in the table. */
+export type CredentialSnapshot = {
+  runId: string;
+  cell: string;
+  publicId: string;
+  program: string;
+  environment: string;
+  status: string;
+  scopes: string[];
+  lastUsedAt: Date | null;
+};

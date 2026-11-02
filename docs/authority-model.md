@@ -93,6 +93,16 @@ Steps 1 to 3 of the build order in the interface strategy (`tin-boss-api` `docs/
 - **Navigation and look.** Pages ordered estate first (Overview, Projects, Hubs and packages, Cells, Drift), then a **BOSS** submenu listing only pages that exist, then Collector. The shared sidebar has three fixed sections with fixed headings, so titled groups wait for a `ui-shell` change. KPI cards are flat with the status carried by the figure and a dot, not a coloured left border. `PageHeader` takes a title and breadcrumb so every page can use it.
 - Tests: `src/registry/hubs.test.ts`, `src/boss/summary.test.ts`, `src/boss/panel.test.ts`.
 
+## Consumers and keys (phase 2, T13, 2026-11-01)
+
+The keys page the spec reserved for phase 2 (C5: metadata only, never secrets), built on the one source that exists.
+
+- **`/keys`**: one identity per platform environment (`urn:tin:<platform>:<environment>`, BOSS's `identityExternalId` and Unkey's `externalId` shape), its keys, their scopes, last use and status, as the collector last saw them in `credential_snapshots`. Identities link to the registry projects whose `client` is the platform. Filters live in the URL.
+- **The rule check.** `config/scopes.ts` records BOSS's scopes, routes and who may hold them, as the minting script enforces them (`tin-boss-api` `scripts/mint-spoke-credential.ts`, 2026-10-31): a platform key is any non-empty subset of the three platform scopes, the console reader is exactly `boss.reports.read` (it returns every platform's reports, so it is never mixed with operator scopes), the tin hub is exactly `boss.session.issue`. `src/credentials/view.ts` applies the same rule to each active key and flags one outside it in red. The page also shows the scope matrix and the routes no key is minted for yet.
+- **The port.** `src/credentials/port.ts` is `CredentialAuthority` (interface strategy §3): `read()` gives identities' keys as metadata. The one adapter is `src/credentials/snapshots.ts` over `credential_snapshots`; a live read of `api-credentials` or Unkey is another adapter, not a new page. Verification outcomes are a column the page already reserves ("not collected yet").
+- **What it does not do.** Mint or rotate: those stay the owner's CLI. Read a cell live: nothing on this page talks to BOSS. Until the collector's writer for `api-credentials` is enabled the table is empty and the page says so; the scope matrix stands on its own.
+- Tests: `src/credentials/view.test.ts`.
+
 ## Tenants and operators (phase 2, 2026-11-01)
 
 Phase P2 of the interface strategy: the tenancy that `006` put in place becomes operable from the console.
