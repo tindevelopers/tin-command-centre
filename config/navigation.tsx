@@ -20,7 +20,7 @@ export const consoleNavigation: {
     { name: "Hubs and packages", path: "/packages", icon: icon(BoxIcon) },
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
     { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
-    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }, { name: "Keys", path: "/boss/keys" }] },
+    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }, { name: "Releases", path: "/boss/releases" }, { name: "Review queue", path: "/boss/queue" }, { name: "Keys", path: "/boss/keys" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
     { name: "Operators", path: "/operators", icon: icon(GroupIcon) },
     { name: "Settings", icon: icon(LockIcon), subItems: [{ name: "Tenants", path: "/tenants" }, { name: "Policy", path: "/settings/policy" }, { name: "Integrations", path: "/settings/integrations" }] },
