@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { currentOperator, requireOperator } from "@/src/auth/access";
 import { registryWritable } from "@/src/registry/db";
 import { integrationStatus, isPlatformTenant, listTenants, tenantHost } from "@/src/tenancy/admin";
@@ -86,18 +87,10 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
         </Panel>
       )}
 
-      <Panel title={`Integrations for ${tenant.slug}`} className="mt-8">
-        <Table head={["Integration", "Environment variable", "State", "Note"]}>
-          {integrations.map((i) => (
-            <tr key={i.name}>
-              <td className={`${td} font-medium`}>{i.label}</td>
-              <td className={`${td} ${mono}`}>{i.name}</td>
-              <td className={td}>{i.configured ? <StatusChip colour="green" label="configured" /> : <span className={neutral}>not set</span>}</td>
-              <td className={`${td} text-gray-600 dark:text-gray-300`}>{i.note}</td>
-            </tr>
-          ))}
-        </Table>
-        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Names only; values are never read into a page. One deployment serves every tenant today, so these describe the deployment. Per-tenant integrations are phase P4 of the interface strategy.</p>
+      <Panel title="Integrations" className="mt-8" link={{ href: "/settings/integrations", label: "all integrations" }}>
+        <p className="text-sm text-gray-700 dark:text-gray-200">
+          {integrations.filter((i) => i.configured).length} of {integrations.length} configured for this deployment, by name only; one deployment serves every tenant today. The <Link href="/settings/integrations" className="underline">Integrations</Link> page lists each connection, what it enables and what the owner sets; per-tenant integrations are phase P4.
+        </p>
       </Panel>
 
       <Panel title="How a request is scoped" className="mt-8">

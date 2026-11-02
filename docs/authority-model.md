@@ -134,6 +134,14 @@ Step 4 of the build order. The console now proposes, BOSS records, platforms pul
 - Nothing BOSS sends is interpolated into text; failures are fixed strings. Rollout: mint the console credentials key on BOSS, set `BOSS_CREDENTIALS_KEY` (and `BOSS_API_URL`), and BOSS needs its credential admin login (`BOSS_CREDENTIAL_ADMIN_DATABASE_URL`) before the routes exist; until then the page says BOSS refused.
 - Tests: `db/pin_proposals.test.ts`, `src/boss/drafts.test.ts`, `src/boss/propose.test.ts`.
 
+## Policy and Integrations (Settings, 2026-11-02)
+
+The last two items of the Settings group (interface strategy §2.1: Tenants · Policy · Integrations). Both are read-only by design.
+
+- **Policy** (`/settings/policy`, `src/settings/policy.ts`): the rules the console runs under, each with where it is recorded, who approves it, how it changes and what overrides it. Three kinds: decision records (hub topology, autonomy classes, support windows, BOSS scopes and who may hold them: owner-approved text, changed by PR, mirrored in the console as `config/*.ts` where a page needs it), code constants (access, registry vocabulary, freshness and collection, BOSS readers and proposals: cited from the same constants the code uses, so the page cannot drift), and deployment settings (tenancy: base domain, default tenant, unknown hosts, reserved slugs). The owner gates close the page: what the console and its agents never do. A policy changes where it is recorded, never from a page; when `tin-programme` publishes `policy/autonomy.yaml` and `policy/support-windows.yaml`, those files are the records.
+- **Integrations** (`/settings/integrations`, `src/settings/integrations.ts`): every connection this deployment can be given, by environment-variable NAME, grouped (status store, sign-in, BOSS, GitHub, tenancy) with its state (configured, partial with the missing names, not set, defaults), what it switches on, what its absence looks like, and what the owner sets with the rule it must obey. No value is ever read into the page. A `NEXT_PUBLIC_` copy of a server-only name is flagged as a leak to remove and rotate. The one live check is the BOSS reports reader, already bounded and fail-closed. The per-tenant panel shows what phase P4 moves into tenant settings (the BOSS keys and the agent App; names only, secrets stay in the manager) and that every tenant inherits the deployment's connections until then; it waits on W0-03 and OD-9. The Tenants page keeps a one-line summary and links here.
+- Navigation: a **Settings** submenu (Tenants, Policy, Integrations). Tests: `src/settings/settings.test.ts`.
+
 ## Agent runs and Autonomy (phase 2, 2026-11-01)
 
 The Automation group of the interface strategy (§2.1): the decide-and-act loop's own record, and the policy it runs under.

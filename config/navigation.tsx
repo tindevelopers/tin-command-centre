@@ -25,7 +25,7 @@ export const consoleNavigation: {
     { name: "Automation", icon: icon(TaskIcon), subItems: [{ name: "Agent runs", path: "/automation/runs" }, { name: "Autonomy", path: "/automation/autonomy" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
     { name: "Operators", path: "/operators", icon: icon(GroupIcon) },
-    { name: "Tenants", path: "/tenants", icon: icon(LockIcon) },
+    { name: "Settings", icon: icon(LockIcon), subItems: [{ name: "Tenants", path: "/tenants" }, { name: "Policy", path: "/settings/policy" }, { name: "Integrations", path: "/settings/integrations" }] },
   ],
   support: [],
   others: [],
