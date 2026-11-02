@@ -16,7 +16,8 @@ const chip: Record<Colour, string> = {
   red: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400",
 };
 const dot: Record<Colour, string> = { green: "bg-green-500", amber: "bg-amber-500", red: "bg-red-500" };
-const bar: Record<Colour | "none", string> = { green: "border-l-green-500", amber: "border-l-amber-500", red: "border-l-red-500", none: "border-l-gray-300 dark:border-l-gray-700" };
+/** A figure's colour carries its status; the card itself stays neutral so a row of five reads as one strip, not five alerts. */
+const figure: Record<Colour | "none", string> = { green: "text-gray-800 dark:text-white/90", amber: "text-amber-600 dark:text-amber-400", red: "text-red-600 dark:text-red-400", none: "text-gray-800 dark:text-white/90" };
 
 export const STATUS_LABEL: Record<Colour, string> = { green: "Healthy", amber: "Attention", red: "Action required" };
 
@@ -29,14 +30,16 @@ export function StatusChip({ colour, label }: { colour: Colour; label?: string }
   );
 }
 
-/** Breadcrumb, title, the tenant in scope, and the page's actions. */
-export function PageHeader({ tenant, subtitle, children }: { tenant: string; subtitle: string; children?: React.ReactNode }) {
+/** Breadcrumb, title, the tenant in scope, and the page's actions. `crumbParent` is the section (BOSS, Access…) when the page sits under one. */
+export function PageHeader({ tenant, subtitle, children, title = "Overview", crumb = title, crumbParent }: { tenant: string; subtitle: string; children?: React.ReactNode; title?: string; crumb?: string; crumbParent?: string }) {
   return (
     <header className="mb-6">
-      <nav aria-label="Breadcrumb" className="text-xs text-gray-500 dark:text-gray-400">Command Center <span aria-hidden>/</span> <span className="text-gray-700 dark:text-gray-200">Overview</span></nav>
+      <nav aria-label="Breadcrumb" className="text-xs text-gray-500 dark:text-gray-400">
+        Control Plane <span aria-hidden>/</span> {crumbParent && <>{crumbParent} <span aria-hidden>/</span> </>}<span className="text-gray-700 dark:text-gray-200">{crumb}</span>
+      </nav>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-title-sm font-semibold text-gray-800 dark:text-white/90">Overview</h1>
+          <h1 className="text-title-sm font-semibold text-gray-800 dark:text-white/90">{title}</h1>
           <span className="rounded border border-gray-200 px-2 py-0.5 font-mono text-xs text-gray-600 dark:border-gray-700 dark:text-gray-300" title="The tenant this view is scoped to">Tenant: {tenant}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">{children}</div>
@@ -52,9 +55,12 @@ export function KpiStrip({ items }: { items: Kpi[] }) {
   return (
     <section aria-label="Key figures" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {items.map((k) => (
-        <div key={k.label} className={`${card} border-l-4 p-4 ${bar[k.tone]}`}>
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{k.label}</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-800 dark:text-white/90">{k.value}</p>
+        <div key={k.label} className={`${card} p-4`}>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{k.label}</p>
+          <p className={`mt-1 flex items-center gap-2 text-2xl font-semibold tabular-nums ${figure[k.tone]}`}>
+            {k.tone !== "none" && <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot[k.tone]}`} aria-hidden />}
+            {k.value}
+          </p>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{k.sub}</p>
         </div>
       ))}

@@ -1,10 +1,14 @@
 import React from "react";
-import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon } from "@tindevelopers/ui-shell/icons";
+import { GridIcon, BoxIcon, BoltIcon, TableIcon, ListIcon, PieChartIcon, PlugInIcon, TaskIcon, GroupIcon, LockIcon } from "@tindevelopers/ui-shell/icons";
 import type { ShellNavItem } from "@tindevelopers/ui-shell";
 
 const icon = (C: React.ComponentType) => React.createElement(C);
 
-/** TIN Command Center navigation (spec C7). Consumers and keys arrives in phase 2 (T13). */
+/**
+ * TIN Control Plane navigation (spec C7), in the order of the 2026-11-01 interface strategy: the estate first, then BOSS.
+ * The shared sidebar has three fixed sections with fixed headings, so BOSS is a submenu rather than a titled group; a page
+ * is listed only once it exists.
+ */
 export const consoleNavigation: {
   main: ShellNavItem[];
   support: ShellNavItem[];
@@ -13,10 +17,15 @@ export const consoleNavigation: {
   main: [
     { name: "Overview", path: "/", icon: icon(GridIcon) },
     { name: "Projects", path: "/projects", icon: icon(ListIcon) },
-    { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
     { name: "Hubs and packages", path: "/packages", icon: icon(BoxIcon) },
     { name: "Cells", path: "/cells", icon: icon(BoltIcon) },
+    { name: "Drift", path: "/drift", icon: icon(PieChartIcon) },
+    { name: "Consumers and keys", path: "/keys", icon: icon(LockIcon) },
+    { name: "BOSS", icon: icon(PlugInIcon), subItems: [{ name: "Reports", path: "/boss/reports" }, { name: "Pin proposals", path: "/boss/proposals" }, { name: "Releases", path: "/boss/releases" }, { name: "Review queue", path: "/boss/queue" }, { name: "Keys", path: "/boss/keys" }] },
+    { name: "Automation", icon: icon(TaskIcon), subItems: [{ name: "Agent runs", path: "/automation/runs" }, { name: "Autonomy", path: "/automation/autonomy" }] },
     { name: "Collector", path: "/collector", icon: icon(TableIcon) },
+    { name: "Operators", path: "/operators", icon: icon(GroupIcon) },
+    { name: "Settings", icon: icon(LockIcon), subItems: [{ name: "Tenants", path: "/tenants" }, { name: "Policy", path: "/settings/policy" }, { name: "Integrations", path: "/settings/integrations" }] },
   ],
   support: [],
   others: [],
