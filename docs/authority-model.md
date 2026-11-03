@@ -178,3 +178,13 @@ node --experimental-strip-types scripts/export-catalog.mjs catalog --from regist
 ```
 
 Mapping: hub and shell-base become Systems; package, boss, spoke and app become Components (library, service, service, website); tiers become Domains; groups become Groups; the owner is the project's group, else its owning project's group, else the first owner person (as a User), else an explicit `unowned` group with a warning. Nothing is written back to the registry, and the files are generated, never hand-edited. Backstage is not run here: standing it up waits for a trigger in the strategy (a third product app, more than about 30 projects, or a second team).
+
+## White-label tenant settings (migration 011)
+
+Each tenant can have its own look and menu (interface strategy 2026-11-01). `db/011_tenant_settings.sql` adds one row per tenant: a display name (at most 40 characters), an accent colour (`#rrggbb`), a logo path on this site (never a remote URL) and the list of **modules** the tenant uses. `config/modules.ts` is the catalogue; each module owns route prefixes, and Overview and Operators are always on so no tenant can lock itself out.
+
+- **No row, a missing table or a bad value means the defaults**, which is today's console. Applying 011 changes nothing until a row is written. Roll out in the usual order: deploy the code, then apply the file (a person applies it; the application never does).
+- **Validated twice.** The table's CHECK constraints and `parseSettings` (`src/tenancy/settings-shared.ts`) both enforce the shapes; a field that fails is dropped, so a bad row makes a console plainer and cannot inject CSS or markup.
+- **What it drives.** The sidebar menu and display name (`components/ConsoleLayout.tsx`), the accent colour (as `--color-brand-500/600`, only after it matched `#rrggbb`) and a 404 for a switched-off module (a `layout.tsx` in each module folder calls `requireModule`).
+- **It is presentation, not access control.** A module being off hides it and 404s its pages. Roles, BOSS scopes and row-level security still decide what anyone may do, and a server action is protected by its own `requireAdmin`, not by the module guard.
+- **Not in this slice.** No screen edits the settings yet (rows are written by the owner as SQL or by a later Settings screen), the browser tab title stays "TIN Control Plane", and custom domains need a host-to-tenant table. Tenant-specific modules live in this repository for now.
