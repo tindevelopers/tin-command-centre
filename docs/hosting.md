@@ -6,9 +6,10 @@
 
 | Environment | URL | Source |
 |---|---|---|
-| Production | https://tin-ops-console.vercel.app | Owner, 2026-10-13 |
+| Production | https://control.tinconnect.com | Owner, 2026-11-01 (naming note in `authority-model.md`) |
+| Vercel project | https://tin-ops-console.vercel.app | Owner, 2026-10-13 |
 
-This is the company-wide technology register (see `authority-model.md`, decision A-console). It is **not** Konnect's Platform Console (`apps/ops` in `konnect-caas-base`, a separate app) and it is **not** TIN Command (`tin-command`, a separate planned app). No document in this repository or in the programme repositories names `console.tin.info` or `console.tinconnect.com` as this app's address.
+This is the company-wide technology register (see `authority-model.md`, decision A-console). It is **not** Konnect's Platform Console (`apps/ops` in `konnect-caas-base`, a separate app) and it is **not** TIN Command (`tin-command`, a separate planned app). `console.tinconnect.com` was its earlier address; `command.tinconnect.com` was planned and never set up.
 
 ## What is known
 
@@ -17,8 +18,7 @@ This is the company-wide technology register (see `authority-model.md`, decision
 
 ## Unconfirmed
 
-- Whether there is a custom domain in front of the Vercel address.
-- Which Vercel project and team own the deployment, and how deploys are triggered. There is no deploy configuration or CI file in this repository.
+- Which Vercel project and team own the deployment, and how deploys are triggered. CI (`.github/workflows/ci.yml`, job `quality`) runs checks only; it does not deploy.
 - Whether preview deployments are protected.
 
 Record the answers here when the owner confirms them.
