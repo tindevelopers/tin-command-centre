@@ -62,3 +62,16 @@ export function filterNavigation<T extends NavLike>(items: T[], settings: Tenant
   return out;
 }
 
+
+/** The browser tab title and page description when a tenant has set no display name. */
+export const DEFAULT_TITLE = "TIN Control Plane";
+export const DEFAULT_DESCRIPTION = "What TIN runs, who owns it, and whether it matches what was declared";
+
+/**
+ * The document title for a tenant: its display name when it has one (so a white-labelled tenant never shows TIN in the tab),
+ * otherwise the default. The name is already validated (at most 40 characters, no control characters) and Next escapes it.
+ */
+export const tabTitle = (settings: TenantSettings): string => settings.brand.name ?? DEFAULT_TITLE;
+
+/** The description follows the same rule: a branded tenant's description does not name TIN. */
+export const tabDescription = (settings: TenantSettings): string => (settings.brand.name ? `${settings.brand.name}: the registry of what runs, who owns it, and whether it matches what was declared` : DEFAULT_DESCRIPTION);

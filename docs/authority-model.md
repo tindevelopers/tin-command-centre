@@ -206,3 +206,12 @@ An admin of the platform tenant edits any active tenant's workspace settings fro
 - **Audited twice.** The row trigger records the change in the *target* tenant (so it can see who changed its settings); the function writes one `SET_FOR_TENANT` row in the *platform* tenant. Editing the platform tenant itself writes only the trigger's row.
 - **Same rules as the tenant's own screen.** The one form (`components/WorkspaceForm.tsx`) and the one strict parser (`parseSettingsForm`) serve both; the table's CHECKs still decide the values. The target slug travels in a hidden field and is validated as a slug before use, and the function resolves it itself.
 - **Rollout.** Deploy the code, then apply 012 after 011 (a person applies it). With 012 unapplied the page says so instead of failing.
+
+### Per-tenant browser tab title
+
+The document title and description come from the tenant's settings: its **display name** when it has one, otherwise "TIN Control Plane". There is no separate title field and no migration, so setting the display name on the Workspace screen changes the sidebar, header and tab together.
+
+- **Never fails the page.** `generateMetadata` (root layout) uses `quietSettings()`, which gives the defaults for an unknown or retired tenant, a store that is down or a lookup that throws. The title is not a reason to 404 or 500 a page; the console layout still 404s an unknown tenant itself.
+- **One lookup.** `lookupTenant()` is the non-throwing form of `currentTenant()`; both are memoised per request, as is the settings read, so the title, the layout and a module guard cost one tenant lookup and one settings query between them.
+- **A branded description does not name TIN.** With a display name set the description is "<name>: the registry of what runs, …".
+- **Not yet branded:** the sign-in page still says "TIN Control Plane" in two places, and the favicon is the shell's. Both are separate small slices.
