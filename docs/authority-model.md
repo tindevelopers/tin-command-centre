@@ -188,3 +188,12 @@ Each tenant can have its own look and menu (interface strategy 2026-11-01). `db/
 - **What it drives.** The sidebar menu and display name (`components/ConsoleLayout.tsx`), the accent colour (as `--color-brand-500/600`, only after it matched `#rrggbb`) and a 404 for a switched-off module (a `layout.tsx` in each module folder calls `requireModule`).
 - **It is presentation, not access control.** A module being off hides it and 404s its pages. Roles, BOSS scopes and row-level security still decide what anyone may do, and a server action is protected by its own `requireAdmin`, not by the module guard.
 - **Not in this slice.** No screen edits the settings yet (rows are written by the owner as SQL or by a later Settings screen), the browser tab title stays "TIN Control Plane", and custom domains need a host-to-tenant table. Tenant-specific modules live in this repository for now.
+
+### Workspace screen (`/workspace`)
+
+Admins edit the tenant settings above from **Settings → Workspace**; every signed-in person sees the current values read-only.
+
+- **Always reachable.** `workspace` is an always-on module with its own route outside `/settings`, so a tenant that switches the Settings module off still has the way back.
+- **Strict on the way in.** `parseSettingsForm` refuses a bad name, accent, logo path or module id with a sentence the admin can act on (the reader, by contrast, quietly drops a bad stored value). The database CHECKs are the second wall.
+- **One audited write.** `saveSettings` upserts the tenant's single row through `tenantWrite`, so `console.actor` is set and `registry_audit` records the insert and each update. The application never deletes the row; clearing a field or ticking every module resets it. Ticking every optional module stores `NULL`, which also turns on modules added later.
+- **Server action checks itself.** `saveWorkspaceAction` calls `requireAdmin` and needs `CONSOLE_ADMIN_DATABASE_URL`; with 011 unapplied it says so instead of failing.

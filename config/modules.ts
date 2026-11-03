@@ -9,6 +9,8 @@ export type ModuleDef = { id: string; label: string; paths: readonly string[]; a
 export const MODULES: readonly ModuleDef[] = [
   { id: "overview", label: "Overview", paths: ["/"], always: true },
   { id: "operators", label: "Operators", paths: ["/operators"], always: true },
+  // Where a tenant's admins change these very settings. Always on, and outside the "settings" module, so switching Settings off can never hide the way back.
+  { id: "workspace", label: "Workspace", paths: ["/workspace"], always: true },
   { id: "projects", label: "Projects", paths: ["/projects"] },
   { id: "packages", label: "Hubs and packages", paths: ["/packages"] },
   { id: "cells", label: "Cells", paths: ["/cells"] },
