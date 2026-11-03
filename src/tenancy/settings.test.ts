@@ -69,3 +69,23 @@ describe("filterNavigation", () => {
     expect(bare).toEqual(["Overview", "Operators", "Settings[Workspace]"]);
   });
 });
+
+describe("tabTitle and tabDescription", () => {
+  it("default to the TIN title and description when a tenant has no display name", async () => {
+    const { tabTitle, tabDescription, DEFAULT_TITLE, DEFAULT_DESCRIPTION } = await import("./settings-shared");
+    expect(tabTitle(defaultSettings())).toBe(DEFAULT_TITLE);
+    expect(tabDescription(defaultSettings())).toBe(DEFAULT_DESCRIPTION);
+  });
+  it("use the tenant's display name, and a branded description never names TIN", async () => {
+    const { tabTitle, tabDescription } = await import("./settings-shared");
+    const s = parseSettings({ brand_name: "Implexus Ops" });
+    expect(tabTitle(s)).toBe("Implexus Ops");
+    expect(tabDescription(s)).toMatch(/^Implexus Ops: /);
+    expect(tabDescription(s)).not.toMatch(/TIN/);
+  });
+  it("a bad stored name falls back to the default title rather than showing it", async () => {
+    const { tabTitle, DEFAULT_TITLE } = await import("./settings-shared");
+    expect(tabTitle(parseSettings({ brand_name: "x".repeat(41) }))).toBe(DEFAULT_TITLE);
+    expect(tabTitle(parseSettings({ brand_name: "a\u0007b" }))).toBe(DEFAULT_TITLE);
+  });
+});
