@@ -1,7 +1,7 @@
-# tin-command-centre (TIN Command Center)
+# tin-control-plane (TIN Control Plane)
 
-The TIN Command Center — the registry of what TIN runs, who owns it and whether it has drifted. A Next.js 16 app
-(package and registry slug `tin-ops-console`) on Neon Postgres and Neon Auth, served at `command.tinconnect.com`.
+The TIN Control Plane — the registry of what TIN runs, who owns it and whether it has drifted. A Next.js 16 app
+(package and registry slug `tin-ops-console`) on Neon Postgres and Neon Auth, served at `control.tinconnect.com`.
 Admins edit **declared** state here (projects, environments, pins, assignments); the collector in
 `shell-base-github-registry` writes **observed** state (package, cell and credential snapshots). Drift is the
 difference. Authority model, tenants and rollout order: `docs/authority-model.md`.
@@ -9,8 +9,7 @@ difference. Authority model, tenants and rollout order: `docs/authority-model.md
 ## Gate
 
 Run before every commit: `pnpm quality` — `lint` → `type-check` → `test` → `build` on Node 24, pnpm 10.6.1.
-(The linter and the `quality` script arrive with the harness-2026-10-29 workflows PR; before that, run
-`pnpm type-check && pnpm test && pnpm build`.) "Skipped" is not "passed": say which checks you skipped. The `db/*`
+CI runs the same `quality` job. "Skipped" is not "passed": say which checks you skipped. The `db/*`
 suites boot PGlite in-process, so no database server is needed to run them.
 
 ## You may
@@ -27,9 +26,9 @@ suites boot PGlite in-process, so no database server is needed to run them.
 ## Rules a tool cannot check here
 
 - `db/*.sql` is delivered as a file and never applied from a pull request. Migrations apply to Neon in file order
-  (001 → 007) with the owner's approval, and `npm`/`pnpm` runs never touch a live database (2026-10-03, `docs/evidence.md`).
+  (001 → 010) with the owner's approval, and `npm`/`pnpm` runs never touch a live database (2026-10-03, `docs/evidence.md`).
 - Deploy the code before applying its migration. 006 and 007 were written that way because the previous release reads
-  what they change; never re-run 006 alone after 007 (2026-10-14, `docs/authority-model.md`).
+  what they change (008–010 add tables the new screens use); never re-run 006 alone after 007 (2026-10-14, `docs/authority-model.md`).
 - Every registry write sets `console.actor` in the same transaction. The audit trigger refuses a write without an
   actor, and no role may edit or delete audit rows (2026-10-05, owner decision).
 - The console never writes observed state: "Collect now" dispatches the collector's `collect.yml`, and the console has

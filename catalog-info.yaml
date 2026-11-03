@@ -1,13 +1,13 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: tin-command-centre
-  title: TIN Command Center
+  name: tin-control-plane
+  title: TIN Control Plane
   description: >-
     The registry of what TIN runs, who owns it and whether it has drifted (package and registry slug tin-ops-console):
     declared state edited by admins against observed state collected from the estate.
   annotations:
-    github.com/project-slug: tindevelopers/tin-command-centre
+    github.com/project-slug: tindevelopers/tin-control-plane
 spec:
   type: website
   owner: group:tindevelopers
