@@ -26,8 +26,8 @@ describe("parseSettings", () => {
   });
   it("keeps only known modules and always keeps the always-on ones", () => {
     const s = parseSettings({ modules: ["projects", "nonsense", 7] });
-    expect(s.modules).toEqual(["overview", "operators", "projects"]);
-    expect(parseSettings({ modules: [] }).modules).toEqual(["overview", "operators"]);
+    expect(s.modules).toEqual(["overview", "operators", "workspace", "projects"]);
+    expect(parseSettings({ modules: [] }).modules).toEqual(["overview", "operators", "workspace"]);
     expect(defaultSettings().modules).toEqual([...MODULE_IDS]);
   });
 });
@@ -39,6 +39,7 @@ describe("moduleForPath", () => {
     expect(moduleForPath("/boss/keys")).toBe("boss");
     expect(moduleForPath("/keys")).toBe("keys");
     expect(moduleForPath("/tenants")).toBe("settings");
+    expect(moduleForPath("/workspace")).toBe("workspace");
     expect(moduleForPath("/settings/policy")).toBe("settings");
   });
   it("does not match a prefix that is only part of a segment, and leaves unowned routes alone", () => {
@@ -62,9 +63,9 @@ describe("filterNavigation", () => {
   it("gives a tenant only its modules, and drops a parent left empty", () => {
     const s = parseSettings({ modules: ["projects", "drift", "keys", "settings"] });
     expect(names(filterNavigation(consoleNavigation.main, s))).toEqual([
-      "Overview", "Projects", "Drift", "Consumers and keys", "Operators", "Settings[Tenants,Policy,Integrations]",
+      "Overview", "Projects", "Drift", "Consumers and keys", "Operators", "Settings[Workspace,Tenants,Policy,Integrations]",
     ]);
     const bare = names(filterNavigation(consoleNavigation.main, parseSettings({ modules: [] })));
-    expect(bare).toEqual(["Overview", "Operators"]);
+    expect(bare).toEqual(["Overview", "Operators", "Settings[Workspace]"]);
   });
 });

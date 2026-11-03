@@ -69,8 +69,18 @@ describe("011_tenant_settings", () => {
     await expect(put("brand_name", "")).rejects.toThrow(/check/i);
     await expect(put("modules", ["Bad Module"])).rejects.toThrow(/check/i);
   });
+  it("the screen's upsert inserts, then updates in place, audited, and leaves one row", async () => {
+    const UPSERT = `insert into tenant_settings (brand_name, accent, logo_path, modules, updated_by) values ($1, $2, $3, $4, $5)
+      on conflict (tenant_id) do update set brand_name = excluded.brand_name, accent = excluded.accent, logo_path = excluded.logo_path,
+      modules = excluded.modules, updated_at = now(), updated_by = excluded.updated_by`;
+    await admin(tin, UPSERT, ["Tin", "#112233", null, null, "gene@tin.info"]);
+    await admin(tin, UPSERT, ["Tin Ops", null, null, [], "gene@tin.info"]);
+    expect(await reader(tin, "select brand_name, accent, modules from tenant_settings")).toEqual([{ brand_name: "Tin Ops", accent: null, modules: [] }]);
+    expect(await reader(tin, "select action from registry_audit where table_name = 'tenant_settings' order by id")).toEqual([{ action: "INSERT" }, { action: "UPDATE" }]);
+  });
   it("one row per tenant, and the application never deletes", async () => {
     await expect(admin(botski, "insert into tenant_settings (brand_name) values ('again')")).rejects.toThrow(/duplicate key|unique/i);
+    // (the 'tin' row from the upsert test above is not 'botski', so this duplicate is still botski's own)
     await expect(admin(botski, "delete from tenant_settings")).rejects.toThrow(/permission denied/);
   });
 });
