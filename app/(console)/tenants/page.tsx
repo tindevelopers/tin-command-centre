@@ -61,9 +61,10 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
                   <td className={td} title={fmt(t.createdAt)}>{fmt(t.createdAt).slice(0, 10)}</td>
                   <td className={td}>{t.retiredAt ? <span className={neutral}>retired {fmt(t.retiredAt).slice(0, 10)}</span> : <StatusChip colour="green" label="active" />}</td>
                   {canManage && (
-                    <td className={td}>
+                    <td className={`${td} whitespace-nowrap`}>
+                      {!t.retiredAt && <Link href={`/tenants/${t.slug}`} className={`${linkBtnCls} mr-3`}>Workspace</Link>}
                       {!t.platform && !t.retiredAt && (
-                        <form action={retireTenantAction}><input type="hidden" name="slug" value={t.slug} /><button className={linkBtnCls}>Retire</button></form>
+                        <form action={retireTenantAction} className="inline"><input type="hidden" name="slug" value={t.slug} /><button className={linkBtnCls}>Retire</button></form>
                       )}
                     </td>
                   )}

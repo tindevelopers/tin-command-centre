@@ -197,3 +197,12 @@ Admins edit the tenant settings above from **Settings → Workspace**; every sig
 - **Strict on the way in.** `parseSettingsForm` refuses a bad name, accent, logo path or module id with a sentence the admin can act on (the reader, by contrast, quietly drops a bad stored value). The database CHECKs are the second wall.
 - **One audited write.** `saveSettings` upserts the tenant's single row through `tenantWrite`, so `console.actor` is set and `registry_audit` records the insert and each update. The application never deletes the row; clearing a field or ticking every module resets it. Ticking every optional module stores `NULL`, which also turns on modules added later.
 - **Server action checks itself.** `saveWorkspaceAction` calls `requireAdmin` and needs `CONSOLE_ADMIN_DATABASE_URL`; with 011 unapplied it says so instead of failing.
+
+### Platform editor for other tenants (`/tenants/<slug>`, migration 012)
+
+An admin of the platform tenant edits any active tenant's workspace settings from **Settings → Tenants → Workspace**. Nobody else can: the page is a 404 for any other tenant, so it does not confirm that a tenant exists.
+
+- **Functions are the only door.** `tenant_settings` stays row-level secured to its own tenant (011). `db/012_platform_tenant_settings.sql` adds `get_tenant_settings(slug)` and `set_tenant_settings(slug, …)`, `SECURITY DEFINER`, in the shape of 008: platform tenant only, an audited actor required, an unknown or retired target refused, `PUBLIC` revoked, the writer granted to `console_admin` only.
+- **Audited twice.** The row trigger records the change in the *target* tenant (so it can see who changed its settings); the function writes one `SET_FOR_TENANT` row in the *platform* tenant. Editing the platform tenant itself writes only the trigger's row.
+- **Same rules as the tenant's own screen.** The one form (`components/WorkspaceForm.tsx`) and the one strict parser (`parseSettingsForm`) serve both; the table's CHECKs still decide the values. The target slug travels in a hidden field and is validated as a slug before use, and the function resolves it itself.
+- **Rollout.** Deploy the code, then apply 012 after 011 (a person applies it). With 012 unapplied the page says so instead of failing.
