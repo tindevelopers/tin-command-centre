@@ -36,3 +36,16 @@ Also seeded: 3 environments (`tin-boss-api` development with cell `konnect-dev`;
 3. **Cell name `konnect-dev`** is the cell file's name; the BOSS cell's own `name` is `tin-boss-api-konnect-dev`. The first collector run will show which one it reports.
 4. **Relationships for `konnect-ops` are inferred** from its dependencies (for example `knowledge` implies `shell-base-knowledge`); `tin-boss-api` consuming `shared-api-hub` is inferred from its `API_CREDENTIALS_*` settings. The other seven Konnect apps have no declared versions yet; their `package.json` files were not read.
 5. **Not included:** `shell-base-release-kit`, and the many other repos in the account (client sites, forks, older platforms), because I found no link to this platform.
+
+## Media platforms and the asset hub (`db/seed/004_media_platforms.draft.sql`, 2026-11-05)
+
+On 2026-11-05 the live registry held 28 projects and none of these four. The draft adds them; it is **not applied** (owner gate).
+
+| Kind | Project | Repo | BOSS state on 2026-11-05 |
+|---|---|---|---|
+| hub | `shared-asset-hub` | tindevelopers/shared-asset-hub | Packages on `next`; run in-process, needs no BOSS key |
+| spoke | `lifescape-platform-v1` | tin-wizard/lifescape-platform-v1 | Outside BOSS claims (D-28); no key, no reporter |
+| spoke | `lockd-platform-v1-workos` | tin-wizard/lockd-platform-v1-workos | Spoke key planned, not minted; no reporter; authoritative branch open (O-1) |
+| spoke | `notarized-platform-v1` | tin-wizard/notarized-platform-v1 | No key, no reporter |
+
+No environments, pins or asset-hub relations are declared: none of the three reports to BOSS or uses the hub yet. To make one show **reported** on `/boss/reports`, the owner mints a key with `tin-boss-api` `scripts/mint-spoke-credential.ts` (identity `urn:tin:<client>:<environment>`, scope `boss.reports.write`, optionally `boss.pins.read`), the platform adds a `POST /v1/reports` reporter (PawPointers' `apps/dashboard/lib/boss/report.ts` is the example), and the environments and pins are then declared here.
