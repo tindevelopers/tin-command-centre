@@ -89,3 +89,18 @@ describe("tabTitle and tabDescription", () => {
     expect(tabTitle(parseSettings({ brand_name: "a\u0007b" }))).toBe(DEFAULT_TITLE);
   });
 });
+
+describe("accentVars", () => {
+  it("is undefined without an accent and sets both brand properties with one", async () => {
+    const { accentVars } = await import("./settings-shared");
+    expect(accentVars(defaultSettings())).toBeUndefined();
+    expect(accentVars(parseSettings({ accent: "#12ab34" }))).toEqual({
+      "--color-brand-500": "#12ab34",
+      "--color-brand-600": "color-mix(in srgb, #12ab34 85%, black)",
+    });
+  });
+  it("drops a stored accent that is not #rrggbb", async () => {
+    const { accentVars } = await import("./settings-shared");
+    expect(accentVars(parseSettings({ accent: "red; background:url(x)" }))).toBeUndefined();
+  });
+});

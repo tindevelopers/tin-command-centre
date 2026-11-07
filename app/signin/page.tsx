@@ -1,9 +1,13 @@
+import { quietSettings } from "@/src/tenancy/settings";
+import { accentVars, DEFAULT_TITLE, type TenantSettings } from "@/src/tenancy/settings-shared";
 import { requestReset, resetPassword, signIn } from "./actions";
 
 const input = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white";
 const button = "w-full min-h-10 rounded-md bg-brand-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-600";
 
-function Mark({ className }: { className?: string }) {
+function Mark({ className, logoPath }: { className?: string; logoPath?: string | null }) {
+  // The logo path is validated same-site by the settings parser, so it is safe to render as-is.
+  if (logoPath) return <img src={logoPath} alt="" width={32} height={32} className={className} />;
   return (
     <svg className={className} width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <rect x="1.5" y="1.5" width="29" height="29" rx="7" stroke="currentColor" strokeWidth="2" />
@@ -20,17 +24,19 @@ const points = [
 ];
 
 /** The front page: the Control Plane's identity on the left, sign-in on the right. */
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({ settings, children }: { settings: TenantSettings; children: React.ReactNode }) {
+  const name = settings.brand.name;
+  const display = name ?? DEFAULT_TITLE;
   return (
-    <main className="grid min-h-screen lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+    <main style={accentVars(settings) as React.CSSProperties | undefined} className="grid min-h-screen lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <section className="relative hidden flex-col justify-between bg-[#0A110E] p-12 text-[#E8EFEA] lg:flex">
         <div className="flex items-center gap-3 text-[#3DDC97]">
-          <Mark />
-          <span className="text-lg font-semibold tracking-wide text-[#E8EFEA]">TIN Control Plane</span>
+          <Mark logoPath={settings.brand.logoPath} />
+          <span className="text-lg font-semibold tracking-wide text-[#E8EFEA]">{display}</span>
         </div>
         <div className="max-w-lg">
-          <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#3DDC97]">control.tinconnect.com</p>
-          <h2 className="mt-4 text-5xl font-bold leading-[1.05] tracking-tight">Everything TIN runs, in one place.</h2>
+          {!name && <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#3DDC97]">control.tinconnect.com</p>}
+          <h2 className="mt-4 text-5xl font-bold leading-[1.05] tracking-tight">Everything {name ?? "TIN"} runs, in one place.</h2>
           <p className="mt-5 text-lg leading-relaxed text-[#A8B8AE]">Every hub, package, app and cell, who owns it, and whether what is deployed matches what you declared.</p>
           <dl className="mt-10 space-y-5">
             {points.map(([term, text]) => (
@@ -46,8 +52,8 @@ function Frame({ children }: { children: React.ReactNode }) {
       <section className="flex flex-col justify-center px-6 py-12 sm:px-12">
         <div className="mx-auto w-full max-w-sm space-y-5">
           <div className="flex items-center gap-3 text-brand-500 lg:hidden">
-            <Mark />
-            <span className="text-base font-semibold text-gray-800 dark:text-white/90">TIN Control Plane</span>
+            <Mark logoPath={settings.brand.logoPath} />
+            <span className="text-base font-semibold text-gray-800 dark:text-white/90">{display}</span>
           </div>
           {children}
         </div>
@@ -58,8 +64,9 @@ function Frame({ children }: { children: React.ReactNode }) {
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { step = "signin", error, email = "", notice } = await searchParams;
+  const settings = await quietSettings();
   return (
-    <Frame>
+    <Frame settings={settings}>
       <div>
         <h1 className="text-title-sm font-semibold text-gray-800 dark:text-white/90">Sign in</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Signing in alone grants nothing: your account must also be an active operator.</p>
