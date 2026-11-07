@@ -13,7 +13,9 @@
     "lint": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "quality": "pnpm lint && pnpm type-check && pnpm test && pnpm build"
+    "quality": "pnpm lint && pnpm type-check && pnpm test && pnpm build",
+    "verify": "pnpm quality",
+    "hooks:install": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@neon/config": "^1.8.3",

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Runs, before the push, the gate CI would run for the commits being pushed, so a failure costs nothing.
+# Install once: pnpm hooks:install. Skip once: git push --no-verify. CI still runs and stays the authority.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo origin/main)"
+if base="$(git merge-base "$upstream" HEAD 2>/dev/null)"; then
+  files="$(git diff --name-only "$base" HEAD)"
+else
+  files='*'
+fi
+
+code=true
+eval "$(printf '%s\n' "$files" | bash scripts/ci-changes.sh)"
+
+if [[ "$code" == true ]]; then
+  echo "pre-push: full gate (pnpm verify)"
+  pnpm verify
+fi
