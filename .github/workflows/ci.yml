@@ -9,14 +9,44 @@ on:
   push:
     branches: [main]
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+# A newer push to a PR cancels the older run; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
+  # Classifies the PR diff (scripts/ci-changes.sh): a docs-only PR skips `quality`, which then
+  # counts as passing for a required check. Push to main always runs it. Fail-safe: an unknown
+  # base, an empty diff or a failure here runs `quality`.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: classify
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ] && files="$(git diff --name-only "$BASE...$HEAD")"; then
+            printf '%s\n' "$files" | bash scripts/ci-changes.sh >> "$GITHUB_OUTPUT"
+          else
+            echo '*' | bash scripts/ci-changes.sh >> "$GITHUB_OUTPUT"
+          fi
+
   quality:
     name: quality
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -48,12 +78,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # pnpm first, so setup-node can cache the pnpm store (version from package.json packageManager).
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-
-      - name: Enable corepack
-        run: corepack enable
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
