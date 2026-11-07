@@ -214,4 +214,12 @@ The document title and description come from the tenant's settings: its **displa
 - **Never fails the page.** `generateMetadata` (root layout) uses `quietSettings()`, which gives the defaults for an unknown or retired tenant, a store that is down or a lookup that throws. The title is not a reason to 404 or 500 a page; the console layout still 404s an unknown tenant itself.
 - **One lookup.** `lookupTenant()` is the non-throwing form of `currentTenant()`; both are memoised per request, as is the settings read, so the title, the layout and a module guard cost one tenant lookup and one settings query between them.
 - **A branded description does not name TIN.** With a display name set the description is "<name>: the registry of what runs, …".
-- **Not yet branded:** the sign-in page still says "TIN Control Plane" in two places, and the favicon is the shell's. Both are separate small slices.
+- **Not yet branded:** the favicon is the shell's (a separate small slice).
+
+### Branded sign-in page
+
+The tenant is resolved from the Host header before anyone signs in, so `/signin` reads the same settings (`quietSettings()`, which never fails the page) and shows the tenant's display name, logo and accent instead of "TIN Control Plane".
+
+- **What changes with a display name set.** The name replaces "TIN Control Plane" in both places, the headline reads "Everything <name> runs, in one place.", and the `control.tinconnect.com` line is hidden. With no name, the page is unchanged.
+- **Accent and logo.** The accent is applied through `accentVars()` (shared with the console layout, so one rule for what a valid accent does); the logo is the tenant's same-site path, validated by `parseSettings`. The dark left panel keeps its fixed colours.
+- **No new data.** No migration and no new setting; a host with no tenant gets the defaults.

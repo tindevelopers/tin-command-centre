@@ -4,7 +4,7 @@ import AdminLayoutShell from "@tindevelopers/ui-shell/layout/AdminLayout";
 import AppSidebar from "@tindevelopers/ui-shell/layout/AppSidebar";
 import AppHeader from "@tindevelopers/ui-shell/layout/AppHeader";
 import { consoleNavigation } from "@/config/navigation";
-import { filterNavigation, type TenantSettings } from "@/src/tenancy/settings-shared";
+import { accentVars, filterNavigation, type TenantSettings } from "@/src/tenancy/settings-shared";
 import React from "react";
 
 const DEFAULT_NAME = "TIN Control";
@@ -21,8 +21,7 @@ export default function ConsoleLayout({ children, settings }: { children: React.
     support: filterNavigation(consoleNavigation.support, settings),
     others: filterNavigation(consoleNavigation.others, settings),
   };
-  const accent = settings.brand.accent;
-  const style = accent ? ({ "--color-brand-500": accent, "--color-brand-600": `color-mix(in srgb, ${accent} 85%, black)` } as React.CSSProperties) : undefined;
+  const style = accentVars(settings) as React.CSSProperties | undefined;
   return (
     <div style={style}>
       <AdminLayoutShell sidebar={<AppSidebar navigation={navigation} branding={branding} />} header={<AppHeader branding={branding} />}>

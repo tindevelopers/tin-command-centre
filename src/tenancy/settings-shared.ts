@@ -63,6 +63,12 @@ export function filterNavigation<T extends NavLike>(items: T[], settings: Tenant
 }
 
 
+/** The accent as the two brand custom properties, or undefined when the tenant set none. The value already matched #rrggbb. */
+export const accentVars = (settings: TenantSettings): Record<string, string> | undefined => {
+  const accent = settings.brand.accent;
+  return accent ? { "--color-brand-500": accent, "--color-brand-600": `color-mix(in srgb, ${accent} 85%, black)` } : undefined;
+};
+
 /** The browser tab title and page description when a tenant has set no display name. */
 export const DEFAULT_TITLE = "TIN Control Plane";
 export const DEFAULT_DESCRIPTION = "What TIN runs, who owns it, and whether it matches what was declared";
